@@ -9,7 +9,7 @@ use Fxtran;
 
 use strict;
 
-my @sys = qw (OMP_LIB CUDAFOR ISO_C_BINDING);
+my @sys = qw (OMP_LIB CUDAFOR ISO_C_BINDING IEEE_ARITHMETIC);
 
 
 sub slurp

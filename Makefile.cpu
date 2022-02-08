@@ -5,5 +5,5 @@ FC = /home/mf/dp/marp/gco/apps/mkpack/support/wrapper/mimpifc-18.0.5.274 -conver
      -fast-transcendentals -fimf-use-svml -no-fma
 
 FC = /home/mf/dp/marp/gco/apps/mkpack/support/wrapper/mimpifc-18.0.5.274 -convert big_endian -assume byterecl -g -O0 -r8 -check bounds -DREPRO48 \
-      -init=arrays,snan -fp-stack-check -ftrapuv -fpe0 -fp-speculation=strict -check uninit -check pointers
+      -init=arrays,snan -fp-stack-check -ftrapuv -fpe0 -fp-speculation=strict -check uninit -check pointers -traceback
 
