@@ -9,6 +9,7 @@ use File::Basename;
 use File::stat;
 use File::Path;
 use Getopt::Long;
+use Data::Dumper;
 
 my %opts;
 
@@ -18,6 +19,40 @@ sub newer
   die unless (-f $f1);
   return 1 unless (-f $f2);
   return stat ($f1)->mtime > stat ($f2)->mtime;
+}
+
+sub prune
+{
+  my $d = shift;
+
+  for my $mod (qw (MODE_TIWMX MODE_ICECLOUD MODD_BUDGET MODE_BUDGET))
+    {
+      my @use = &F ('.//use-stmt[string(module-N)="?"]', $mod, $d);
+      $_->unbindNode for (@use);
+    }
+
+  my @call = &F ('.//call-stmt[string(procedure-designator)="ICECLOUD"]', $d);
+
+  $_->unbindNode for (@call);
+
+  my @stmt = &F ('.//ANY-stmt[.//named-E[string(N)="ESATW" or string(N)="ESATI"]]', $d);
+
+  $_->unbindNode for (@stmt);
+
+  my @if = &F ('.//if-stmt[./condition-E/named-E[string(N)="BUCONF"]]', $d);
+
+  $_->unbindNode for (@if);
+
+  my @args = qw (BUCONF TBUDGETS KBUDGETS);
+
+  for my $arg (@args)
+    {
+      my ($decl) = &F ('.//T-decl-stmt[.//EN-decl[string(EN-N)="?"]]', $arg, $d);
+      $decl->unbindNode () if ($decl);
+      my ($dum) = &F ('.//dummy-arg-LT/arg-N[string(N)="?"]', $arg, $d);
+      &Fxtran::removeListElement ($dum) if ($dum);
+    }
+
 }
 
 sub copyIfNewer
@@ -68,15 +103,18 @@ sub preProcessIfNewerCPU
       my $d = &Fxtran::fxtran (location => $f1);
       &saveToFile ($d, "tmp/$f2");
 
-      &Associate::resolveAssociates ($d);
-      &saveToFile ($d, "tmp/resolveAssociates/$f2");
+      &prune ($d);
+      &saveToFile ($d, "tmp/prune/$f2");
 
-      &Expr::replacePowByMultiplyOrExp ($d);
-      &saveToFile ($d, "tmp/resolveAssociates/$f2");
+#     &Associate::resolveAssociates ($d);
+#     &saveToFile ($d, "tmp/resolveAssociates/$f2");
+
+#     &Expr::replacePowByMultiplyOrExp ($d);
+#     &saveToFile ($d, "tmp/resolveAssociates/$f2");
 
       'FileHandle'->new (">$f2")->print ($d->textContent ());
 
-      &Fxtran::intfb ($f2);
+#     &Fxtran::intfb ($f2);
     }
 }
 
@@ -99,14 +137,18 @@ sub preProcessIfNewerGPU
     {
       print "Preprocess $f1\n";
 
+
       my $d = &Fxtran::fxtran (location => $f1);
       &saveToFile ($d, "tmp/$f2");
 
-      &Inline::inlineContainedSubroutines ($d);
-      &saveToFile ($d, "tmp/inlineContainedSubroutines/$f2");
+      &prune ($d);
+      &saveToFile ($d, "tmp/prune/$f2");
 
-      &Associate::resolveAssociates ($d);
-      &saveToFile ($d, "tmp/resolveAssociates/$f2");
+#     &Inline::inlineContainedSubroutines ($d);
+#     &saveToFile ($d, "tmp/inlineContainedSubroutines/$f2");
+
+#     &Associate::resolveAssociates ($d);
+#     &saveToFile ($d, "tmp/resolveAssociates/$f2");
 
 #     &Vector::hoistJlonLoops ($d);
 #     &saveToFile ($d, "tmp/hoistJlonLoops/$f2");
@@ -114,23 +156,23 @@ sub preProcessIfNewerGPU
 #     &Vector::addDirectives ($d);
 #     &saveToFile ($d, "tmp/addDirectives/$f2");
 #
-      &Loop::removeJlonLoops ($d);
-      &saveToFile ($d, "tmp/removeJlonLoops/$f2");
+#     &Loop::removeJlonLoops ($d);
+#     &saveToFile ($d, "tmp/removeJlonLoops/$f2");
 
-      &ReDim::reDim ($d);
-      &saveToFile ($d, "tmp/reDim/$f2");
+#     &ReDim::reDim ($d);
+#     &saveToFile ($d, "tmp/reDim/$f2");
 
-      &addSeqDirective ($d);
+#     &addSeqDirective ($d);
 
-      &Stack::addStack ($d);
-      &saveToFile ($d, "tmp/addStack/$f2");
+#     &Stack::addStack ($d);
+#     &saveToFile ($d, "tmp/addStack/$f2");
 
-      &Expr::replacePowByMultiplyOrExp ($d);
-      &saveToFile ($d, "tmp/resolveAssociates/$f2");
+#     &Expr::replacePowByMultiplyOrExp ($d);
+#     &saveToFile ($d, "tmp/resolveAssociates/$f2");
 
       'FileHandle'->new (">$f2")->print ($d->textContent ());
 
-      &Fxtran::intfb ($f2);
+#     &Fxtran::intfb ($f2);
     }
 }
 
@@ -179,7 +221,7 @@ if ($opts{update})
 
 if ($opts{compile})
   {
-    system ('make -j4 main.x br_main.x') and die;
+    system ('make -j4 main.x') and die;
   }
 
 

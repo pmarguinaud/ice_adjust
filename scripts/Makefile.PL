@@ -11,13 +11,17 @@ use strict;
 
 my @sys = qw (OMP_LIB CUDAFOR ISO_C_BINDING);
 
+
+my %slurp;
 sub slurp
 {
   my $f = shift;
-  do { local $/ = undef; my $fh = 'FileHandle'->new ("<$f"); <$fh> };
+  $slurp{$f} ||= do { local $/ = undef; my $fh = 'FileHandle'->new ("<$f"); <$fh> };
+  $slurp{$f};
 }
 
 my %deps;
+my %mod2obj;
 
 sub deps
 {
@@ -31,7 +35,7 @@ sub deps
       my @inc = ($code =~ m/\n\s*#include\s+"(.*?)"/goms);
       my @use = map { uc ($_) } ($code =~ m/\n\s*use(?:\s*,\s*intrinsic)?\s+(\w+)/gomis);
       @use = grep { ! $sys{$_} } @use;
-      my @mod = map { lc ($_) . '.o' } @use;
+      my @mod = map { $mod2obj{$_} or die $_; } @use;
       $deps{$f} = [@mod, @inc];
    }
 
@@ -47,6 +51,15 @@ sub kind
   return uc ($kind);
 }
 
+sub name
+{
+  my $f = shift;
+  my $code = &slurp ($f);
+  my ($name) = ($code =~ m/^\s*(?:PROGRAM|SUBROUTINE|MODULE)\s+(\w+)/igoms);
+  $name or die $f;
+  return uc ($name);
+}
+
 my $fh = 'FileHandle'->new (">Makefile");
 
 $fh->print (<< "EOF");
@@ -54,7 +67,42 @@ include Makefile.inc
 
 EOF
 
+for my $F90 (<*.F90>)
+  {
+    my $kind = &kind ($F90);
+    next unless ($kind eq 'SUBROUTINE');
+    my $name = &name ($F90);
+
+    my $doc = &Fxtran::intf ($F90);
+
+    my @inc = &F ('.//include-stmt', $doc);
+    $_->unbindNode for (@inc);
+
+    my $intf = $doc->textContent;
+    $intf =~ s/\s+\n$//o;
+
+    my $fh = 'FileHandle'->new ('>modi_' . lc ($name) . '.F90');
+    $fh->print (<< "EOF");
+MODULE MODI_$name
+
+INTERFACE
+$intf
+END INTERFACE
+
+END MODULE
+EOF
+  }
+
+
 my (@obj, @prg);
+
+for my $F90 (<*.F90>)
+  {
+    my $kind = &kind ($F90);
+    next unless ($kind eq 'MODULE');
+    my $name = &name ($F90);
+    ($mod2obj{$name} = $F90) =~ s/\.F90$/.o/o;
+  }
 
 
 for my $cpp (<*.cpp>)
@@ -88,18 +136,7 @@ EOF
 for my $F90 (<*.F90>)
   {
     my $kind = &kind ($F90);
-    if ($kind eq 'SUBROUTINE')
-      {
-        my $intfb = &Fxtran::intfb ($F90);
-        (my $ok = $intfb) =~ s/\.h$/.ok/o;
-        my @deps = &deps ($intfb);
-        $fh->print (<< "EOF");
-$ok: $intfb @deps
-	touch $ok
-
-EOF
-      }
-    elsif ($kind eq 'PROGRAM')
+    if ($kind eq 'PROGRAM')
       {
         push @prg, $F90;
       }

@@ -906,6 +906,44 @@ sub remove_unused_module_vars
 
 }
 
+sub removeListElement
+{
+  my $x = shift;
+
+  my $nn = $x->nodeName;
+
+  my ($p) = $x->parentNode;
+  
+  my @cf = &F ('following-sibling::text()[contains(.,",")]', $x);   
+  my @cp = &F ('preceding-sibling::text()[contains(.,",")]', $x);   
+  
+  if (@cf)
+    {   
+      $cf[+0]->unbindNode (); 
+    }   
+  elsif (@cp)
+    {   
+      $cp[-1]->unbindNode (); 
+    }   
+  
+  $x->parentNode->appendChild (&t (' '));
+  my $l = $x->parentNode->lastChild;
+  
+  $x->unbindNode (); 
+  
+  while ($l)
+    {   
+      last if (($l->nodeName ne '#text') && ($l->nodeName ne 'cnt'));
+      $l = $l->previousSibling;
+      last unless ($l);
+      $l->nextSibling->unbindNode;
+    }   
+
+  return &F ("./$nn", $p) ? 0 : 1;
+}
+
+
+
 sub remove_unused_associate
 {
   my $assoc = shift;
@@ -1451,7 +1489,7 @@ sub add_associates
 
 }
 
-sub intfb
+sub intf
 {
   my $F90 = shift;
 
@@ -1547,6 +1585,15 @@ sub intfb
       $_->unbindNode ();
     }
 
+  return $doc;
+}
+
+sub intfb
+{
+  my $F90 = shift;
+
+  my $doc = &intf ($F90);
+
   # Strip empty lines
   
   my $text = $doc->textContent ();
@@ -1554,7 +1601,6 @@ sub intfb
   $text =~ s/^\s*\n$//goms;
   
   my $sub = &basename ($F90, qw (.F90));
-  
   
   &Fxtran::save_to_file ("$sub.intfb.h", << "EOF");
 INTERFACE
