@@ -2,6 +2,11 @@ PROGRAM MAIN
 
 USE XRD_GETOPTIONS
 USE GETDATA_MOD
+USE MODI_ICE_ADJUST
+USE MODD_DIMPHYEX,   ONLY: DIMPHYEX_t
+USE MODD_CST,        ONLY: CST_t
+USE MODD_NEB,        ONLY: NEB_t
+USE MODD_RAIN_ICE_PARAM, ONLY : RAIN_ICE_PARAM_t
 
 IMPLICIT NONE
 
@@ -11,7 +16,6 @@ INTEGER      :: KFDIA
 INTEGER      :: KLEV  
 INTEGER      :: KRR  
 
-REAL, ALLOCATABLE   :: PZZF           (:,:,:,:)   
 REAL, ALLOCATABLE   :: PRHODJ         (:,:,:,:)   
 REAL, ALLOCATABLE   :: PEXNREF        (:,:,:,:)   
 REAL, ALLOCATABLE   :: PRHODREF       (:,:,:,:)   
@@ -32,6 +36,8 @@ REAL, ALLOCATABLE   :: PHLI_HRI       (:,:,:,:)
 REAL, ALLOCATABLE   :: PHLI_HCF       (:,:,:,:)   
 REAL, ALLOCATABLE   :: ZRS            (:,:,:,:,:) 
 REAL, ALLOCATABLE   :: ZZZ            (:,:,:,:)   
+REAL, ALLOCATABLE   :: ZSIGQSAT       (:,:,:)   
+REAL, ALLOCATABLE   :: ZICE_CLD_WGT   (:,:,:)   
 
 REAL, ALLOCATABLE   :: PRS_OUT        (:,:,:,:,:) 
 REAL, ALLOCATABLE   :: PSRCS_OUT      (:,:,:,:)   
@@ -44,6 +50,21 @@ REAL, ALLOCATABLE   :: PHLI_HCF_OUT   (:,:,:,:)
 INTEGER :: NPROMA, NGPBLKS, NFLEVG
 INTEGER :: IBL
 
+TYPE(DIMPHYEX_t)         :: D
+TYPE(CST_t)              :: CST
+TYPE(RAIN_ICE_PARAM_t)   :: ICEP
+TYPE(NEB_t)              :: NEB
+CHARACTER(LEN=1)         :: HFRAC_ICE
+CHARACTER(LEN=80)        :: HCONDENS
+CHARACTER(LEN=4)         :: HLAMBDA3 
+CHARACTER(LEN=4)         :: HBUNAME  
+LOGICAL                  :: OSUBG_COND
+LOGICAL                  :: OSIGMAS  
+LOGICAL                  :: OCND2    
+LOGICAL                  :: LMFCONV
+CHARACTER(LEN=80)        :: HSUBG_MF_PDF
+REAL                     :: PTSTEP    
+
 CALL INITOPTIONS ()
 NGPBLKS = 296
 CALL GETOPTION ("--blocks", NGPBLKS)
@@ -53,17 +74,40 @@ NFLEVG = -1
 CALL GETOPTION ("--nflevg", NFLEVG)
 CALL CHECKOPTIONS ()
 
-CALL GETDATA (NPROMA, NGPBLKS, NFLEVG, PZZF, PRHODJ, PEXNREF, PRHODREF, PPABSM,   &
-& PTHT, PSIGS, PMFCONV, PRC_MF, PRI_MF, PCF_MF, PTHS, PRS, PSRCS, PCLDFR, PHLC_HRC, &
-& PHLC_HCF, PHLI_HRI, PHLI_HCF, ZRS, ZZZ, PRS_OUT, PSRCS_OUT, PCLDFR_OUT, &
-& PHLC_HRC_OUT, PHLC_HCF_OUT, PHLI_HRI_OUT, PHLI_HCF_OUT)
+CALL GETDATA (NPROMA, NGPBLKS, NFLEVG, PRHODJ, PEXNREF, PRHODREF, PPABSM, PTHT, ZICE_CLD_WGT,     &
+& ZSIGQSAT, PSIGS, PMFCONV, PRC_MF, PRI_MF, PCF_MF, PTHS, PRS, PSRCS, PCLDFR, PHLC_HRC, PHLC_HCF, &
+& PHLI_HRI, PHLI_HCF, ZRS, ZZZ, PRS_OUT, PSRCS_OUT, PCLDFR_OUT, PHLC_HRC_OUT, PHLC_HCF_OUT,       &
+& PHLI_HRI_OUT, PHLI_HCF_OUT)
+
 
 KLEV = SIZE (PRS, 2)
 KRR  = SIZE (PRS, 3)
 
-PRINT *, LBOUND (PRS)
-PRINT *, UBOUND (PRS)
 
-PRINT *, " P = ", PRS (1, 1, :, 1, 1)
+HFRAC_ICE    = 'S'
+HCONDENS     = 'CB02'
+HLAMBDA3     = 'CB'
+HBUNAME      = 'DEPI'
+OSUBG_COND   = .TRUE.
+OSIGMAS      = .TRUE.
+OCND2        = .FALSE.
+HSUBG_MF_PDF = 'TRIANGLE'
+PTSTEP       = 50.000000000000000    
+LMFCONV      = .TRUE.
+
+DO IBL = 1, NGPBLKS
+  CALL ICE_ADJUST (D, CST, ICEP, NEB, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3, HBUNAME, OSUBG_COND,                                &
+  & OSIGMAS, OCND2, HSUBG_MF_PDF, PTSTEP, ZSIGQSAT (:, :, IBL), PRHODJ=PRHODJ (:, :, :, IBL), PEXNREF=PEXNREF (:, :, :, IBL), &
+  & PRHODREF=PRHODREF (:, :, :, IBL), PSIGS=PSIGS (:, :, :, IBL), LMFCONV=LMFCONV, PMFCONV=PMFCONV (:, :, :, IBL),            &
+  & PPABST=PPABSM (:, :, :, IBL), PZZ=ZZZ (:, :, :, IBL), PEXN=PEXNREF (:, :, :, IBL), PCF_MF=PCF_MF (:, :, :, IBL),          &
+  & PRC_MF=PRC_MF (:, :, :, IBL), PRI_MF=PRI_MF  (:, :, :, IBL), PRV=ZRS(:, :, :, 1, IBL), PRC=ZRS(:, :, :, 2, IBL),          &
+  & PRVS=PRS(:, :, :, 1, IBL), PRCS=PRS(:, :, :, 2, IBL), PTH=ZRS(:, :, :, 0, IBL), PTHS=PTHS (:, :, :, IBL),                 &
+  & PSRCS=PSRCS (:, :, :, IBL), PCLDFR=PCLDFR (:, :, :, IBL), PRR=ZRS(:, :, :, 3, IBL), PRI=ZRS(:, :, :, 4, IBL),             &
+  & PRIS=PRS(:, :, :, 4, IBL), PRS=ZRS(:, :, :, 5, IBL), PRG=ZRS(:, :, :, 6, IBL), PHLC_HRC=PHLC_HRC(:, :, :, IBL),           &
+  & PHLC_HCF=PHLC_HCF(:, :, :, IBL), PHLI_HRI=PHLI_HRI(:, :, :, IBL), PHLI_HCF=PHLI_HCF(:, :, :, IBL),                        &
+  & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL))
+ENDDO
+
+
 
 END

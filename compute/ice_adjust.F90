@@ -136,10 +136,10 @@ CHARACTER(LEN=4),         INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 co
 CHARACTER(LEN=4),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
-LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
+LOGICAL,                  INTENT(IN)    :: OSIGMAS  ! Switch for Sigma_s: 
                                                     ! use values computed in CONDENSATION
                                                     ! or that from turbulence scheme
-LOGICAL                                 :: OCND2    ! logical switch to sparate liquid 
+LOGICAL,                  INTENT(IN)    :: OCND2    ! logical switch to sparate liquid 
                                                     ! and ice
                                                     ! more rigid (DEFALT value : .FALSE.)
 CHARACTER(LEN=80),        INTENT(IN)    :: HSUBG_MF_PDF

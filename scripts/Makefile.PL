@@ -12,12 +12,11 @@ use strict;
 my @sys = qw (OMP_LIB CUDAFOR ISO_C_BINDING);
 
 
-my %slurp;
 sub slurp
 {
   my $f = shift;
-  $slurp{$f} ||= do { local $/ = undef; my $fh = 'FileHandle'->new ("<$f"); <$fh> };
-  $slurp{$f};
+  return '' unless (-f $f);
+  do { local $/ = undef; my $fh = 'FileHandle'->new ("<$f"); <$fh> };
 }
 
 my %deps;
@@ -46,7 +45,7 @@ sub kind
 {
   my $f = shift;
   my $code = &slurp ($f);
-  my ($kind) = ($code =~ m/^\s*(PROGRAM|SUBROUTINE|MODULE)/igoms);
+  my ($kind) = ($code =~ m/^\s*(PROGRAM|SUBROUTINE|MODULE|FUNCTION)/igoms);
   $kind or die $f;
   return uc ($kind);
 }
@@ -55,7 +54,7 @@ sub name
 {
   my $f = shift;
   my $code = &slurp ($f);
-  my ($name) = ($code =~ m/^\s*(?:PROGRAM|SUBROUTINE|MODULE)\s+(\w+)/igoms);
+  my ($name) = ($code =~ m/^\s*(?:PROGRAM|SUBROUTINE|MODULE|FUNCTION)\s+(\w+)/igoms);
   $name or die $f;
   return uc ($name);
 }
@@ -81,8 +80,7 @@ for my $F90 (<*.F90>)
     my $intf = $doc->textContent;
     $intf =~ s/\s+\n$//o;
 
-    my $fh = 'FileHandle'->new ('>modi_' . lc ($name) . '.F90');
-    $fh->print (<< "EOF");
+    my $modi = << "EOF";
 MODULE MODI_$name
 
 INTERFACE
@@ -91,6 +89,16 @@ END INTERFACE
 
 END MODULE
 EOF
+
+    my $f = 'modi_' . lc ($name) . '.F90';
+    my $modi0 = &slurp ($f);
+
+    if ($modi ne $modi0)
+      {
+        my $fh = 'FileHandle'->new ('>modi_' . lc ($name) . '.F90');
+        $fh->print ($modi);
+        $fh->close ();
+      }
   }
 
 
