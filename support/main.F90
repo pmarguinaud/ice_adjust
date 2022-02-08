@@ -9,6 +9,7 @@ USE MODD_NEB,        ONLY: NEB_t, NEB
 USE MODD_RAIN_ICE_PARAM, ONLY : RAIN_ICE_PARAM_t
 USE MODI_INI_CST
 USE MODI_INI_NEB
+USE OMP_LIB
 
 
 IMPLICIT NONE
@@ -68,6 +69,11 @@ REAL                     :: PTSTEP
 LOGICAL                  :: LLCHECK
 INTEGER                  :: IBLOCK1, IBLOCK2
 
+REAL(KIND=8) :: TS,TE
+REAL(KIND=8) :: TSC, TEC, TSD, TED, ZTC, ZTD 
+INTEGER :: ITIME, NTIME
+
+
 CALL INITOPTIONS ()
 NGPBLKS = 296
 CALL GETOPTION ("--blocks", NGPBLKS)
@@ -80,6 +86,8 @@ IBLOCK1 = 1
 CALL GETOPTION ("--check-block-1", IBLOCK1)
 IBLOCK2 = NGPBLKS
 CALL GETOPTION ("--check-block-2", IBLOCK2)
+NTIME = 1
+CALL GETOPTION ("--times", NTIME)
 CALL CHECKOPTIONS ()
 
 CALL GETDATA (NPROMA, NGPBLKS, NFLEVG, PRHODJ, PEXNREF, PRHODREF, PPABSM, PTHT, ZICE_CLD_WGT,     &
@@ -128,21 +136,46 @@ D%NKE  = 1
 D%NKTB = 1
 D%NKTE = KLEV
 
+TS = OMP_GET_WTIME ()
 
-!$OMP PARALLEL DO PRIVATE (IBL)
-DO IBL = 1, NGPBLKS
-  CALL ICE_ADJUST (D, CST, ICEP, NEB, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3, HBUNAME, OSUBG_COND,                                &
-  & OSIGMAS, OCND2, HSUBG_MF_PDF, PTSTEP, ZSIGQSAT (:, :, IBL), PRHODJ=PRHODJ (:, :, :, IBL), PEXNREF=PEXNREF (:, :, :, IBL), &
-  & PRHODREF=PRHODREF (:, :, :, IBL), PSIGS=PSIGS (:, :, :, IBL), LMFCONV=LMFCONV, PMFCONV=PMFCONV (:, :, :, IBL),            &
-  & PPABST=PPABSM (:, :, :, IBL), PZZ=ZZZ (:, :, :, IBL), PEXN=PEXNREF (:, :, :, IBL), PCF_MF=PCF_MF (:, :, :, IBL),          &
-  & PRC_MF=PRC_MF (:, :, :, IBL), PRI_MF=PRI_MF  (:, :, :, IBL), PRV=ZRS(:, :, :, 1, IBL), PRC=ZRS(:, :, :, 2, IBL),          &
-  & PRVS=PRS(:, :, :, 1, IBL), PRCS=PRS(:, :, :, 2, IBL), PTH=ZRS(:, :, :, 0, IBL), PTHS=PTHS (:, :, :, IBL),                 &
-  & PSRCS=PSRCS (:, :, :, IBL), PCLDFR=PCLDFR (:, :, :, IBL), PRR=ZRS(:, :, :, 3, IBL), PRI=ZRS(:, :, :, 4, IBL),             &
-  & PRIS=PRS(:, :, :, 4, IBL), PRS=ZRS(:, :, :, 5, IBL), PRG=ZRS(:, :, :, 6, IBL), PHLC_HRC=PHLC_HRC(:, :, :, IBL),           &
-  & PHLC_HCF=PHLC_HCF(:, :, :, IBL), PHLI_HRI=PHLI_HRI(:, :, :, IBL), PHLI_HCF=PHLI_HCF(:, :, :, IBL),                        &
-  & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL))
+ZTD = 0.
+ZTC = 0.
+
+
+DO ITIME = 1, NTIME
+
+  TSD = OMP_GET_WTIME ()
+
+  !$OMP PARALLEL DO PRIVATE (IBL)
+  DO IBL = 1, NGPBLKS
+    CALL ICE_ADJUST (D, CST, ICEP, NEB, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3, HBUNAME, OSUBG_COND,                                &
+    & OSIGMAS, OCND2, HSUBG_MF_PDF, PTSTEP, ZSIGQSAT (:, :, IBL), PRHODJ=PRHODJ (:, :, :, IBL), PEXNREF=PEXNREF (:, :, :, IBL), &
+    & PRHODREF=PRHODREF (:, :, :, IBL), PSIGS=PSIGS (:, :, :, IBL), LMFCONV=LMFCONV, PMFCONV=PMFCONV (:, :, :, IBL),            &
+    & PPABST=PPABSM (:, :, :, IBL), PZZ=ZZZ (:, :, :, IBL), PEXN=PEXNREF (:, :, :, IBL), PCF_MF=PCF_MF (:, :, :, IBL),          &
+    & PRC_MF=PRC_MF (:, :, :, IBL), PRI_MF=PRI_MF  (:, :, :, IBL), PRV=ZRS(:, :, :, 1, IBL), PRC=ZRS(:, :, :, 2, IBL),          &
+    & PRVS=PRS(:, :, :, 1, IBL), PRCS=PRS(:, :, :, 2, IBL), PTH=ZRS(:, :, :, 0, IBL), PTHS=PTHS (:, :, :, IBL),                 &
+    & PSRCS=PSRCS (:, :, :, IBL), PCLDFR=PCLDFR (:, :, :, IBL), PRR=ZRS(:, :, :, 3, IBL), PRI=ZRS(:, :, :, 4, IBL),             &
+    & PRIS=PRS(:, :, :, 4, IBL), PRS=ZRS(:, :, :, 5, IBL), PRG=ZRS(:, :, :, 6, IBL), PHLC_HRC=PHLC_HRC(:, :, :, IBL),           &
+    & PHLC_HCF=PHLC_HCF(:, :, :, IBL), PHLI_HRI=PHLI_HRI(:, :, :, IBL), PHLI_HCF=PHLI_HCF(:, :, :, IBL),                        &
+    & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL))
+  ENDDO
+  !$OMP END PARALLEL DO
+
+  TED = OMP_GET_WTIME ()
+
+  ZTC = ZTC + (TEC - TSC)
+  ZTD = ZTD + (TED - TSD)
+
 ENDDO
-!$OMP END PARALLEL DO
+
+TE=OMP_GET_WTIME()
+
+WRITE (*,'(A,F8.2,A)') 'elapsed time : ',TE-TS,' s'
+WRITE (*,'(A,F8.4,A)') '          i.e. ',1000.*(TE-TS)/(NPROMA*NGPBLKS)/NTIME,' ms/gp'
+
+PRINT *, " ZTD = ", ZTD, ZTD / REAL (NPROMA*NGPBLKS*NTIME)
+PRINT *, " ZTC = ", ZTC, ZTC / REAL (NPROMA*NGPBLKS*NTIME)
+
 
 IF (LLCHECK) THEN
   DO IBL = IBLOCK1, IBLOCK2
