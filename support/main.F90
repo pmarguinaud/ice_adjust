@@ -145,8 +145,10 @@ ZTC = 0.
 DO ITIME = 1, NTIME
 
   TSD = OMP_GET_WTIME ()
+!
+  TSC = OMP_GET_WTIME ()
 
-  !$OMP PARALLEL DO PRIVATE (IBL)
+!#!$OMP PARALLEL DO PRIVATE (IBL)
   DO IBL = 1, NGPBLKS
     CALL ICE_ADJUST (D, CST, ICEP, NEB, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3, HBUNAME, OSUBG_COND,                                &
     & OSIGMAS, OCND2, HSUBG_MF_PDF, PTSTEP, ZSIGQSAT (:, :, IBL), PRHODJ=PRHODJ (:, :, :, IBL), PEXNREF=PEXNREF (:, :, :, IBL), &
@@ -159,8 +161,10 @@ DO ITIME = 1, NTIME
     & PHLC_HCF=PHLC_HCF(:, :, :, IBL), PHLI_HRI=PHLI_HRI(:, :, :, IBL), PHLI_HCF=PHLI_HCF(:, :, :, IBL),                        &
     & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL))
   ENDDO
-  !$OMP END PARALLEL DO
+!#!$OMP END PARALLEL DO
 
+  TEC = OMP_GET_WTIME ()
+!
   TED = OMP_GET_WTIME ()
 
   ZTC = ZTC + (TEC - TSC)
@@ -168,7 +172,7 @@ DO ITIME = 1, NTIME
 
 ENDDO
 
-TE=OMP_GET_WTIME()
+TE = OMP_GET_WTIME()
 
 WRITE (*,'(A,F8.2,A)') 'elapsed time : ',TE-TS,' s'
 WRITE (*,'(A,F8.4,A)') '          i.e. ',1000.*(TE-TS)/(NPROMA*NGPBLKS)/NTIME,' ms/gp'
@@ -188,6 +192,8 @@ IF (LLCHECK) THEN
     CALL DIFF ("PHLI_HCF", PHLI_HCF_OUT (:,:,:,IBL), PHLI_HCF (:,:,:,IBL))
   ENDDO
 ENDIF
+
+STOP
 
 CONTAINS
 
