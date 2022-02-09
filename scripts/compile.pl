@@ -90,6 +90,7 @@ sub addSeqDirective
 
 sub preProcessIfNewerCPU
 {
+  use Inline;
   use Associate;
   use Expr;
   use Fxtran;
@@ -106,11 +107,8 @@ sub preProcessIfNewerCPU
       &prune ($d);
       &saveToFile ($d, "tmp/prune/$f2");
 
-#     &Associate::resolveAssociates ($d);
-#     &saveToFile ($d, "tmp/resolveAssociates/$f2");
-
-#     &Expr::replacePowByMultiplyOrExp ($d);
-#     &saveToFile ($d, "tmp/resolveAssociates/$f2");
+#     &Inline::inlineContainedSubroutines ($d);
+#     &saveToFile ($d, "tmp/inlineContainedSubroutines/$f2");
 
       'FileHandle'->new (">$f2")->print ($d->textContent ());
 

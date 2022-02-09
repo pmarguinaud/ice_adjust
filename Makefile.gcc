@@ -1,0 +1,12 @@
+
+FC2 = /opt/softs/gcc/9.2.0/bin/gfortran -fconvert=swap -fno-second-underscore -fbacktrace -m64 -fopenmp -ffree-line-length-none -fno-sign-zero -fpic \
+         -fno-range-check -g -pipe -ffree-form  -DLINUX -DLITTLE_ENDIAN -DLITTLE -g -O2 -ftree-vectorize  -fdefault-real-8 -DREPRO48 -Wl,-rpath,/opt/softs/gcc/9.2.0/lib64
+
+FC0 = /opt/softs/gcc/9.2.0/bin/gfortran -fconvert=swap -fno-second-underscore -fbacktrace -m64 -fopenmp -ffree-line-length-none -fno-sign-zero -fpic \
+         -fno-range-check -g -pipe -ffree-form  -DLINUX -DLITTLE_ENDIAN -DLITTLE -g -O0 -fdefault-real-8 -DREPRO48 -Wl,-rpath,/opt/softs/gcc/9.2.0/lib64
+
+
+
+FC = $(FC2)
+
+

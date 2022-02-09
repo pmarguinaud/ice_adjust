@@ -306,10 +306,35 @@ sub inlineContainedSubroutine
 
 }
 
+sub loadContainedIncludes
+{
+  my $d = shift;
+  my @include = &F ('.//include-stmt[preceding-sibling::contains-stmt', $d);
+  for my $include (@include)
+    {
+      my ($filename) = &F ('./filename', $include, 2);
+      for ($filename)
+        {
+          s/^"//o;
+          s/"$//o;
+        }
+      my $text = do { local $/ = undef; my $fh = 'FileHandle'->new ("<$filename"); <$fh> };
+      my $di = &Fxtran::fxtran (string => $text);
+      my @pu = &F ('./object/file/program-unit', $di);
+      for my $pu (@pu)
+        {
+          $include->parentNode->insertBefore ($pu, $include);
+          $include->parentNode->insertBefore (&t ("\n"), $include);
+        }
+      $include->unbindNode ();
+    }
+}
 
 sub inlineContainedSubroutines
 {
   my $d1 = shift;
+
+  &loadContainedIncludes ($d1);
 
   my @n2 = &f ('.//f:program-unit//f:program-unit/f:subroutine-stmt/f:subroutine-N/f:N/f:n/text ()', $d1);
 
