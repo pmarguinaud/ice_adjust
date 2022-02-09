@@ -22,7 +22,6 @@
 !
 !! --------------------------------------------------------------------------
 USE MODD_NEB, ONLY : NEB_t
-USE MODD_CST, ONLY : XTT
 !
 IMPLICIT NONE
 !
@@ -41,7 +40,7 @@ SELECT CASE(HFRAC_ICE)
   CASE ('T') !using Temperature
     PFRAC_ICE = MAX( 0., MIN(1., (( NEB%XTMAXMIX - PT ) / ( NEB%XTMAXMIX - NEB%XTMINMIX )) ) ) ! freezing interval
   CASE ('O') !using Temperature with old formulae
-    PFRAC_ICE = MAX( 0., MIN(1., (( XTT - PT ) / 40.) ) ) ! freezing interval
+    PFRAC_ICE = MAX( 0., MIN(1., (( CST%XTT - PT ) / 40.) ) ) ! freezing interval
   CASE ('N') !No ice
     PFRAC_ICE = 0.
   CASE ('S') !Same as previous
