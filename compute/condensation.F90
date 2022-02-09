@@ -171,7 +171,7 @@ REAL :: ZDZ(D%NIB:D%NIE), &
         ZARDUM(D%NIE-D%NIB+1), ZCLDUM(D%NIE-D%NIB+1)
 ! end OCND2
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
-INTEGER, DIMENSION(D%NIT) :: IERR
+INTEGER :: IERR
 !
 !
 !*       0.3  Definition of constants :
@@ -329,7 +329,9 @@ DO JK=D%NKTB,D%NKTE
           ZFRAC(JI) = PRI_IN(JI,JJ,JK) / (PRC_IN(JI,JJ,JK)+PRI_IN(JI,JJ,JK))
         ENDIF
       END DO
-      CALL COMPUTE_FRAC_ICE(HFRAC_ICE, NEB, ZFRAC(:), PT(:,JJ,JK), IERR) !error code IERR cannot be checked here to not break vectorization
+      DO JI=D%NIB,D%NIE
+        CALL COMPUTE_FRAC_ICE(HFRAC_ICE, NEB, ZFRAC(JI), PT(JI,JJ,JK), IERR) !error code IERR cannot be checked here to not break vectorization
+      ENDDO
     ENDIF
     DO JI=D%NIB,D%NIE
       ZQSL(JI)   = CST%XRD / CST%XRV * ZPV(JI) / ( PPABS(JI,JJ,JK) - ZPV(JI) )
