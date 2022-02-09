@@ -65,6 +65,12 @@ sub replaceDummyArgumentByActualNamedE
       return;
     }
   
+  if ((scalar (@ra) == 1) && (scalar (@re) == 0))
+    {
+      $e->replaceNode ($a->cloneNode (1));
+      return;
+    }
+  
   # Resolve array references
 
   if ((scalar (@ra) == 1) && (scalar (@re) == 1))

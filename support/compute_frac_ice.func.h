@@ -21,9 +21,6 @@
 !!      R. El Khatib     12-Aug-2021 written as a include file
 !
 !! --------------------------------------------------------------------------
-USE MODD_NEB, ONLY : NEB_t
-!
-IMPLICIT NONE
 !
 CHARACTER(LEN=1), INTENT(IN)    :: HFRAC_ICE       ! scheme to use
 TYPE(NEB_t),      INTENT(IN)    :: NEB

@@ -8,6 +8,6 @@ FC0 = /home/mf/dp/marp/gco/apps/mkpack/support/wrapper/mimpifc-18.0.5.274 -conve
       -init=arrays,snan -fp-stack-check -ftrapuv -fpe0 -fp-speculation=strict -check uninit -check pointers -traceback -align array64byte,all -qopenmp
 
 
-FC = $(FC2)
+FC = $(FC0)
 
 

@@ -107,8 +107,8 @@ sub preProcessIfNewerCPU
       &prune ($d);
       &saveToFile ($d, "tmp/prune/$f2");
 
-#     &Inline::inlineContainedSubroutines ($d);
-#     &saveToFile ($d, "tmp/inlineContainedSubroutines/$f2");
+      &Inline::inlineContainedSubroutines ($d);
+      &saveToFile ($d, "tmp/inlineContainedSubroutines/$f2");
 
       'FileHandle'->new (">$f2")->print ($d->textContent ());
 
