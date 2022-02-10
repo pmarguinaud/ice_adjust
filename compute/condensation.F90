@@ -153,22 +153,21 @@ REAL,    DIMENSION(D%NIT,D%NJT)  :: ZTMIN           ! minimum Temp. related to I
 REAL, DIMENSION(D%NIT,D%NJT,D%NKT) :: ZLV, ZLS, ZCPD
 REAL :: ZGCOND, ZAUTC, ZAUTI, ZGAUV, ZGAUC, ZGAUI, ZGAUTC, ZGAUTI, ZCRIAUTI   ! Used for Gaussian PDF integration
 REAL :: ZLVS                                      ! thermodynamics
-REAL, DIMENSION(D%NIB:D%NIE) :: ZPV, ZPIV, ZQSL, ZQSI ! thermodynamics
+REAL, DIMENSION(D%NIT) :: ZPV, ZPIV, ZQSL, ZQSI ! thermodynamics
 REAL :: ZLL, DZZ, ZZZ                           ! used for length scales 
 REAL :: ZAH, ZDRW, ZDTL, ZSIG_CONV                     ! related to computation of Sig_s
-REAL, DIMENSION(D%NIB:D%NIE) :: ZA, ZB, ZSBAR, ZSIGMA, ZQ1 ! related to computation of Sig_s
-REAL, DIMENSION(D%NIB:D%NIE) :: ZCOND
-REAL, DIMENSION(D%NIB:D%NIE) :: ZFRAC           ! Ice fraction
+REAL, DIMENSION(D%NIT) :: ZA, ZB, ZSBAR, ZSIGMA, ZQ1 ! related to computation of Sig_s
+REAL, DIMENSION(D%NIT) :: ZCOND
+REAL, DIMENSION(D%NIT) :: ZFRAC           ! Ice fraction
 INTEGER  :: INQ1
 REAL :: ZINC
 ! related to OCND2 noise check :
 REAL :: ZRSP,  ZRSW, ZRFRAC, ZRSDIF, ZRCOLD
 ! related to OCND2  ice cloud calulation :
-REAL, DIMENSION(D%NIB:D%NIE) :: ESATW_T
+REAL, DIMENSION(D%NIT) :: ESATW_T
 REAL :: ZDUM1,ZDUM2,ZDUM3,ZDUM4,ZPRIFACT
 REAL, DIMENSION(D%NIT,D%NJT,D%NKT) :: TCLD
-REAL :: ZDZ(D%NIB:D%NIE), &
-        ZARDUM(D%NIE-D%NIB+1), ZCLDUM(D%NIE-D%NIB+1)
+REAL :: ZDZ(D%NIT), ZARDUM(D%NIT), ZCLDUM(D%NIT)
 ! end OCND2
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 INTEGER :: IERR
