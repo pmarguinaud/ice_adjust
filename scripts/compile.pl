@@ -121,8 +121,8 @@ sub preProcessIfNewerCPU
       &Loop::arraySyntaxLoop ($d);
       &saveToFile ($d, "tmp/arraySyntaxRange/$f2");
 
-#     &Loop::removeJlonLoops ($d);
-#     &saveToFile ($d, "tmp/removeJlonLoops/$f2");
+      &Loop::removeJlonLoops ($d);
+      &saveToFile ($d, "tmp/removeJlonLoops/$f2");
 
 
       'FileHandle'->new (">$f2")->print ($d->textContent ());
