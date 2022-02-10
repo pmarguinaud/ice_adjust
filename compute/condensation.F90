@@ -299,8 +299,9 @@ DO JK=D%NKTB,D%NKTE
   JKM=MAX(MIN(JK-D%NKL,D%NKTE),D%NKTB)
   DO JJ=D%NJB,D%NJE
     IF (OCND2) THEN
-       ZDZ(D%NIB:D%NIE) = PZZ(D%NIB:D%NIE,JJ,JKP) - &
-                                            PZZ(D%NIB:D%NIE,JJ,JKP-D%NKL)
+       DO JI = D%NIB, D%NIE
+         ZDZ(JI) = PZZ(JI,JJ,JKP) - PZZ(JI,JJ,JKP-D%NKL)
+       ENDDO
        CALL ICECLOUD(D%NIE-D%NIB+1,PPABS(D%NIB,JJ,JK),PZZ(D%NIB,JJ,JK),ZDZ(D%NIB), &
             & PT(D%NIB,JJ,JK),PRV_IN(D%NIB,JJ,JK),1.,-1., &
             & ZCLDUM,1.,TCLD(D%NIB,JJ,JK), &

@@ -72,7 +72,7 @@ INTEGER                  :: IBLOCK1, IBLOCK2
 REAL(KIND=8) :: TS,TE
 REAL(KIND=8) :: TSC, TEC, TSD, TED, ZTC, ZTD 
 INTEGER :: ITIME, NTIME
-LOGICAL :: LLVERBOSE, LLSTAT
+LOGICAL :: LLVERBOSE, LLSTAT, LLONEBYONE
 
 
 CALL INITOPTIONS ()
@@ -91,6 +91,7 @@ CALL GETOPTION ("--stat", LLSTAT)
 NTIME = 1
 CALL GETOPTION ("--times", NTIME)
 CALL GETOPTION ("--verbose", LLVERBOSE)
+CALL GETOPTION ("--onebyone", LLONEBYONE)
 CALL CHECKOPTIONS ()
 
 CALL GETDATA (NPROMA, NGPBLKS, NFLEVG, PRHODJ, PEXNREF, PRHODREF, PPABSM, PTHT, ZICE_CLD_WGT,     &
@@ -152,6 +153,26 @@ TS = OMP_GET_WTIME ()
 ZTD = 0.
 ZTC = 0.
 
+IF (LLONEBYONE) THEN
+
+  DO IBL = 1, NGPBLKS
+    DO JLON = 1, NPROMA
+    D%NIB = JLON
+    D%NIE = JLON
+    CALL ICE_ADJUST (D, CST, ICEP, NEB, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3, HBUNAME, OSUBG_COND,                                &
+    & OSIGMAS, OCND2, HSUBG_MF_PDF, PTSTEP, ZSIGQSAT (:, :, IBL), PRHODJ=PRHODJ (:, :, :, IBL), PEXNREF=PEXNREF (:, :, :, IBL), &
+    & PRHODREF=PRHODREF (:, :, :, IBL), PSIGS=PSIGS (:, :, :, IBL), LMFCONV=LMFCONV, PMFCONV=PMFCONV (:, :, :, IBL),            &
+    & PPABST=PPABSM (:, :, :, IBL), PZZ=ZZZ (:, :, :, IBL), PEXN=PEXNREF (:, :, :, IBL), PCF_MF=PCF_MF (:, :, :, IBL),          &
+    & PRC_MF=PRC_MF (:, :, :, IBL), PRI_MF=PRI_MF  (:, :, :, IBL), PRV=ZRS(:, :, :, 1, IBL), PRC=ZRS(:, :, :, 2, IBL),          &
+    & PRVS=PRS(:, :, :, 1, IBL), PRCS=PRS(:, :, :, 2, IBL), PTH=ZRS(:, :, :, 0, IBL), PTHS=PTHS (:, :, :, IBL),                 &
+    & PSRCS=PSRCS (:, :, :, IBL), PCLDFR=PCLDFR (:, :, :, IBL), PRR=ZRS(:, :, :, 3, IBL), PRI=ZRS(:, :, :, 4, IBL),             &
+    & PRIS=PRS(:, :, :, 4, IBL), PRS=ZRS(:, :, :, 5, IBL), PRG=ZRS(:, :, :, 6, IBL), PHLC_HRC=PHLC_HRC(:, :, :, IBL),           &
+    & PHLC_HCF=PHLC_HCF(:, :, :, IBL), PHLI_HRI=PHLI_HRI(:, :, :, IBL), PHLI_HCF=PHLI_HCF(:, :, :, IBL),                        &
+    & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL))
+    ENDDO
+  ENDDO
+
+ELSE
 
 DO ITIME = 1, NTIME
 
@@ -182,6 +203,8 @@ DO ITIME = 1, NTIME
   ZTD = ZTD + (TED - TSD)
 
 ENDDO
+
+ENDIF
 
 TE = OMP_GET_WTIME()
 
@@ -223,6 +246,7 @@ IF (LLSTAT) THEN
 ENDIF
 
 IF (LLCHECK) THEN
+  IF (SUM (ABS (POUT) + ABS (PREF)) > 0) THEN
   WRITE (*, '(A4)', ADVANCE='NO') ""
   DO JLON = 1, NPROMA
     WRITE (*, '("|",I12,A12)', ADVANCE='NO') JLON, ""
@@ -239,6 +263,7 @@ IF (LLCHECK) THEN
     ENDDO
     WRITE (*, '("|")')
   ENDDO
+  ENDIF
 ENDIF
 
 END SUBROUTINE
