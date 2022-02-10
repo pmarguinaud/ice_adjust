@@ -132,12 +132,18 @@ sub walk
     }
 }
 
+my %P;
+
 sub preprocess
 {
   my $p = 'XML::XPath::Parser'->new ();
-  my $x = $p->parse ($_[0]);
-  &walk ($x);
-  return $x->as_string;
+  unless ($P{$_[0]})
+    {
+      my $x = $p->parse ($_[0]);
+      &walk ($x);
+      $P{$_[0]} = $x->as_string;
+    }
+  return $P{$_[0]};
 }
 
 
@@ -156,18 +162,14 @@ use strict;
 use base qw (Exporter);
 our @EXPORT = qw (F f n t TRUE FALSE);
 
-sub xpath_by_type
-{
-  my $type = shift;
-  my $size = length ($type);
-  return '*[substring(name(),string-length(name())-'.$size.')="-'.$type.'"]';
-}
 
 sub getIndent
 {
   # get statement indentation
 
   my $stmt = shift;
+
+  $stmt or croak;
 
   my $n = $stmt->previousSibling;
 
@@ -180,12 +182,21 @@ sub getIndent
       return 0;
     }    
 
-
   if (($n->nodeName eq '#text') && ($n->data =~ m/\n/o))
     {    
       (my $t = $n->data) =~ s/^.*\n//gsmo;
       return length ($t);
     }    
+
+  if ($n = $n->lastChild)
+    {
+      if (($n->nodeName eq '#text') && ($n->data =~ m/\n/o))
+        {    
+          (my $t = $n->data) =~ s/^.*\n//gsmo;
+          return length ($t);
+        }    
+      return &getIndent ($n);
+    }
 
   return 0;
 }
@@ -203,7 +214,13 @@ sub reIndent
       (my $t = $cr->data) =~ s/\n/\n$sp/g;
       $cr->setData ($t);
     }
+}
 
+sub xpath_by_type
+{
+  my $type = shift;
+  my $size = length ($type);
+  return '*[substring(name(),string-length(name())-'.$size.')="-'.$type.'"]';
 }
 
 sub _offset
@@ -261,8 +278,11 @@ sub _fold
       $$plen += length ($node->textContent);
 
       my ($lit) = &f ('./ancestor::f:literal-E', $node);
+      my ($nam) = &f ('./ancestor::f:named-E', $node);
+      my ($ass) = &f ('./ancestor::f:associate', $node);
+      my ($arg) = &f ('./ancestor::f:arg', $node);
 
-      if (($$plen > 80) && (! $lit))
+      if (($$plen > 100) && (! $lit) && (! $nam) && (! $ass) && (! $arg))
         {
           if ($node->textContent =~ m/^\s*,\s*$/o)
             { 
@@ -315,6 +335,7 @@ sub expand
         }
     }
 
+  $stmt->normalize ();
 }
 
 # Fold a statement
@@ -463,7 +484,7 @@ sub f
 
   my $xpath = shift (@_);
 
-  while (@_ && ($xpath =~ s/\?/$_[0]/))
+  while ($xpath =~ s/\?/$_[0]/)
     {
       shift (@_);
     }
@@ -472,14 +493,14 @@ sub f
 
   my @x;
 
-  eval 
-    {
-      @x = $xpc->findnodes ($xpath, $_[0]);
-    };
+  eval
+  {
+    @x = $xpc->findnodes ($xpath, $_[0]);
+  };
 
   if (my $c = $@)
     {
-      &croak ($c);
+      croak ($c);
     }
 
   if (! defined ($_[1]))
@@ -1352,11 +1373,16 @@ sub save_to_file
   'FileHandle'->new (">$file")->print ($data);
 } 
 
+use lib "/home/gmap/mrpm/marguina/fxtran/master/perl/blib/lib"; 
+use lib "/home/gmap/mrpm/marguina/fxtran/master/perl/blib/arch/auto/fxtran";
+use fxtran;
+
 sub fxtran
 {
   my %args = @_;
 
-  my @opts = @{ $args{opts} || [] };
+  my @fopts = @{ $args{fopts} || [] };
+  my @xopts = @{ $args{xopts} || [] };
 
   if ($args{string})
     {
@@ -1364,58 +1390,65 @@ sub fxtran
       my $fh = 'File::Temp'->new (SUFFIX => '.F90');
       $fh->print ($args{string});
       $fh->flush ();
-      system (qw (fxtran -construct-tag -no-cpp -no-include), @opts, $fh->filename)
+      system (qw (fxtran -construct-tag -no-include), @fopts, $fh->filename)
         && die ($args{string});
-      my $doc = 'XML::LibXML'->load_xml (location => $fh->filename . '.xml');
+      my $doc = 'XML::LibXML'->load_xml (location => $fh->filename . '.xml', @xopts);
       return $doc;
+    }
+  elsif ($args{fragment})
+    {
+      chomp (my $fragment = $args{fragment});
+      my $program = << "EOF";
+$fragment
+END
+EOF
+      my $xml = &fxtran::run ('-construct-tag', '-no-include', @fopts, $program);
+      my $doc = 'XML::LibXML'->load_xml (string => $xml, @xopts);
+      $doc = $doc->lastChild->firstChild;
+
+      $doc->lastChild->unbindNode () for (1 .. 2);
+      my @c = $doc->childNodes ();
+
+      return @c;
     }
   elsif ($args{statement})
     {
-      use File::Temp;
-      my $fh = 'File::Temp'->new (SUFFIX => '.F90');
-      $fh->print ("PROGRAM MAIN\n");
-      $fh->print ($args{statement});
-      $fh->print ("END PROGRAM MAIN\n");
-      $fh->flush ();
-      system (qw (fxtran -construct-tag -no-cpp -no-include), @opts, $fh->filename)
-        && die ($args{statement});
-      my $doc = 'XML::LibXML'->load_xml (location => $fh->filename . '.xml');
-      my @n = &f ('.//f:program-unit/f:*', $doc);
-      pop (@n);
-      shift (@n);
-      return @n
+      my $program = << "EOF";
+$args{statement}
+END 
+EOF
+      my $xml = &fxtran::run ('-line-length', 300, $program);
+      my $doc = 'XML::LibXML'->load_xml (string => $xml, @xopts);
+      my $n = $doc->documentElement->firstChild->firstChild;
+      return $n;
     }
   elsif ($args{expr})
     {
-      use File::Temp;
-      my $fh = 'File::Temp'->new (SUFFIX => '.F90');
-      $fh->print ("PROGRAM MAIN\n");
-      $fh->print ("X = $args{expr}\n");
-      $fh->print ("END PROGRAM MAIN\n");
-      $fh->flush ();
-      system (qw (fxtran -construct-tag -no-cpp -no-include), @opts, $fh->filename)
-        && die ($args{statement});
-      my $doc = 'XML::LibXML'->load_xml (location => $fh->filename . '.xml');
-      my @n = &f ('.//f:program-unit/f:*', $doc);
-      pop (@n);
-      shift (@n);
-      my ($stmt) = @n;
-      my ($expr) = &f ('.//f:E-2/f:*', $stmt);
-      return $expr;
+      my $program = << "EOF";
+$args{expr} = X
+END
+EOF
+      my $xml = &fxtran::run ('-line-length', 300, $program);
+      my $doc = 'XML::LibXML'->load_xml (string => $xml, @xopts);
+      my $n = $doc->documentElement->firstChild->firstChild->firstChild->firstChild;
+      return $n;
     }
   elsif (my $f = $args{location})
     {
       use File::stat;
       return unless (-f $f);
 
-      my @cmd = (qw (fxtran -construct-tag -no-cpp -no-include -line-length 256), @opts, $f);
-      system (@cmd)
-        && die ("`@cmd' failed\n");
+      my $dir = $args{dir} || &dirname ($f);
+      my $xml = "$dir/" . &basename ($f) . '.xml';
 
-      my $doc = 'XML::LibXML'->load_xml (location => $f . '.xml');
+      my @cmd = (qw (fxtran -construct-tag -no-include), @fopts, -o => $xml, $f);
+      system (@cmd)
+        && croak ("`@cmd' failed\n");
+
+      my $doc = 'XML::LibXML'->load_xml (location => $xml, @xopts);
       return $doc;
     }
-  die;
+  croak "@_";
 }
 
 sub add_used_vars

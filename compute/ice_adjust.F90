@@ -199,7 +199,7 @@ REAL, DIMENSION(D%NIT,D%NJT),                OPTIONAL, INTENT(IN)   :: PICE_CLD_
 !
 !
 REAL  :: ZW1,ZW2    ! intermediate fields
-REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT) &
                          :: ZT,   &  ! adjusted temperature
                    ZRV, ZRC, ZRI, &  ! adjusted state
                             ZCPH, &  ! guess of the CPh for the mixing
@@ -309,7 +309,7 @@ DO JK=D%NKTB,D%NKTE
         ELSE
           PCLDFR(JI,JJ,JK)  = 0.
         ENDIF
-        IF ( SIZE(PSRCS,3) /= 0 ) THEN
+        IF ( D%NKT /= 0 ) THEN
           PSRCS(JI,JJ,JK) = PCLDFR(JI,JJ,JK)
         END IF
       ENDDO

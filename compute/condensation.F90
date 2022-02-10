@@ -256,14 +256,14 @@ IF ( .NOT. OSIGMAS ) THEN
     END DO
   END DO
   ! Determine tropopause/inversion  height from minimum temperature
-#ifdef REPRO48
+!ifdef REPRO48
   ITPL(:,:)  = D%NIB+1
   !I (Sébastien Riette) don't understand why tropopause level is set
   !with the index of the second physical point on the horizontal (i.e. 2+JPHEXT)!!!
   !I assume it is a bug...
-#else
-  ITPL(:,:)  = D%NKB+D%NKL
-#endif
+!else
+! ITPL(:,:)  = D%NKB+D%NKL
+!endif
   ZTMIN(:,:) = 400.
   DO JK = D%NKTB+1,D%NKTE-1
     DO JJ=D%NJB,D%NJE
@@ -368,7 +368,7 @@ DO JK=D%NKTB,D%NKTE
         ZLL = ZL(JI,JJ,JK)
         ! standard deviation due to convection
         ZSIG_CONV =0.
-        IF( SIZE(PMFCONV) /= 0) ZSIG_CONV = ZCSIG_CONV * PMFCONV(JI,JJ,JK) / ZA(JI)
+        IF(LMFCONV) ZSIG_CONV = ZCSIG_CONV * PMFCONV(JI,JJ,JK) / ZA(JI)
         ! zsigma should be of order 4.e-4 in lowest 5 km of atmosphere
         ZSIGMA(JI) =  SQRT( MAX( 1.E-25, ZCSIGMA * ZCSIGMA * ZLL*ZLL/(DZZ*DZZ)*(&
              ZA(JI)*ZA(JI)*ZDRW*ZDRW - 2.*ZA(JI)*ZB(JI)*ZDRW*ZDTL + ZB(JI)*ZB(JI)*ZDTL*ZDTL) + &
