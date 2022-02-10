@@ -118,11 +118,8 @@ sub preProcessIfNewerCPU
       &Construct::changeIfStatementsInIfConstructs ($d);
       &saveToFile ($d, "tmp/changeIfStatementsInIfConstructs/$f2");
 
-if ($f1 !~ m/ice_adjust/o)
-{
       &Loop::arraySyntaxLoop ($d);
       &saveToFile ($d, "tmp/arraySyntaxRange/$f2");
-}
 
 #     &Loop::removeJlonLoops ($d);
 #     &saveToFile ($d, "tmp/removeJlonLoops/$f2");
