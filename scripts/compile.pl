@@ -96,6 +96,7 @@ sub preProcessIfNewerCPU
   use Fxtran;
   use Dimension;
   use Construct;
+  use ReDim;
 
   my ($f1, $f2) = @_;
 
@@ -127,6 +128,7 @@ sub preProcessIfNewerCPU
       &ReDim::reDim ($d);
       &saveToFile ($d, "tmp/reDim/$f2");
 
+      &addSeqDirective ($d);
 
       'FileHandle'->new (">$f2")->print ($d->textContent ());
 

@@ -78,7 +78,7 @@ for my $F90 (<*.F90>)
     $_->unbindNode for (@inc);
 
     my $intf = $doc->textContent;
-    $intf =~ s/\s+\n$//o;
+    $intf =~ s/^\s*\n$//goms;
 
     my $modi = << "EOF";
 MODULE MODI_$name
