@@ -88,6 +88,7 @@ USE MODD_DIMPHYEX,       ONLY: DIMPHYEX_t
 USE MODD_CST,            ONLY: CST_t
 USE MODD_RAIN_ICE_PARAM, ONLY: RAIN_ICE_PARAM_t
 USE MODD_NEB,            ONLY: NEB_t
+USE MODD_STRINGS
 USE MODE_TIWMX,          ONLY : ESATW, ESATI
 USE MODE_ICECLOUD,       ONLY : ICECLOUD
 !
@@ -100,9 +101,9 @@ TYPE(DIMPHYEX_t),             INTENT(IN)    :: D
 TYPE(CST_t),                  INTENT(IN)    :: CST
 TYPE(RAIN_ICE_PARAM_t),       INTENT(IN)    :: ICEP
 TYPE(NEB_t),                  INTENT(IN)    :: NEB
-CHARACTER(LEN=1),             INTENT(IN)    :: HFRAC_ICE
-CHARACTER(LEN=4),             INTENT(IN)    :: HCONDENS
-CHARACTER(LEN=*),             INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
+INTEGER,                      INTENT(IN)    :: HFRAC_ICE
+INTEGER,                      INTENT(IN)    :: HCONDENS
+INTEGER,                      INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
 REAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(IN)    :: PPABS  ! pressure (Pa)
 REAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(IN)    :: PZZ    ! height of model levels (m)
 REAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(IN)    :: PRHODREF
@@ -381,7 +382,7 @@ DO JK=D%NKTB,D%NKTE
       ! normalized saturation deficit
       ZQ1(JI)   = ZSBAR(JI)/ZSIGMA(JI)
     END DO
-    IF(HCONDENS == 'GAUS') THEN
+    IF(HCONDENS == S_GAUS) THEN
       DO JI=D%NIB,D%NIE
         ! Gaussian Probability Density Function around ZQ1
         ! Computation of ZG and ZGAM(=erf(ZG))
@@ -437,7 +438,7 @@ DO JK=D%NKTB,D%NKTE
         END DO
       ENDIF
 
-    ELSEIF(HCONDENS == 'CB02')THEN
+    ELSEIF(HCONDENS == S_CB02)THEN
       DO JI=D%NIB,D%NIE
         !Total condensate
         IF (ZQ1(JI) > 0. .AND. ZQ1(JI) <= 2) THEN
@@ -535,7 +536,7 @@ DO JK=D%NKTB,D%NKTE
         PRV_OUT(JI,JJ,JK) = ZRT(JI,JJ,JK) - PRC_OUT(JI,JJ,JK) - PRI_OUT(JI,JJ,JK)*ZPRIFACT
       END DO
     END IF ! End OCND2
-    IF(HLAMBDA3=='CB')THEN
+    IF(HLAMBDA3==S_CB)THEN
       DO JI=D%NIB,D%NIE
         ! s r_c/ sig_s^2
         !    PSIGRC(JI,JJ,JK) = PCLDFR(JI,JJ,JK)  ! use simple Gaussian relation
