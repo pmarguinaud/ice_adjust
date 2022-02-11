@@ -10,6 +10,7 @@ USE MODD_RAIN_ICE_PARAM, ONLY : RAIN_ICE_PARAM_t
 USE MODD_STRINGS
 USE MODI_INI_CST
 USE MODI_INI_NEB
+USE STACK_MOD
 USE OMP_LIB
 
 
@@ -69,6 +70,8 @@ INTEGER                  :: HSUBG_MF_PDF
 REAL                     :: PTSTEP    
 LOGICAL                  :: LLCHECK
 INTEGER                  :: IBLOCK1, IBLOCK2
+
+TYPE (STACK) :: YLSTACK
 
 REAL(KIND=8) :: TS,TE
 REAL(KIND=8) :: TSC, TEC, TSD, TED, ZTC, ZTD 
@@ -169,7 +172,7 @@ IF (LLONEBYONE) THEN
     & PSRCS=PSRCS (:, :, :, IBL), PCLDFR=PCLDFR (:, :, :, IBL), PRR=ZRS(:, :, :, 3, IBL), PRI=ZRS(:, :, :, 4, IBL),             &
     & PRIS=PRS(:, :, :, 4, IBL), PRS=ZRS(:, :, :, 5, IBL), PRG=ZRS(:, :, :, 6, IBL), PHLC_HRC=PHLC_HRC(:, :, :, IBL),           &
     & PHLC_HCF=PHLC_HCF(:, :, :, IBL), PHLI_HRI=PHLI_HRI(:, :, :, IBL), PHLI_HCF=PHLI_HCF(:, :, :, IBL),                        &
-    & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL))
+    & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL), YDSTACK=YLSTACK)
     ENDDO
   ENDDO
 
@@ -192,7 +195,7 @@ DO ITIME = 1, NTIME
     & PSRCS=PSRCS (:, :, :, IBL), PCLDFR=PCLDFR (:, :, :, IBL), PRR=ZRS(:, :, :, 3, IBL), PRI=ZRS(:, :, :, 4, IBL),             &
     & PRIS=PRS(:, :, :, 4, IBL), PRS=ZRS(:, :, :, 5, IBL), PRG=ZRS(:, :, :, 6, IBL), PHLC_HRC=PHLC_HRC(:, :, :, IBL),           &
     & PHLC_HCF=PHLC_HCF(:, :, :, IBL), PHLI_HRI=PHLI_HRI(:, :, :, IBL), PHLI_HCF=PHLI_HCF(:, :, :, IBL),                        &
-    & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL))
+    & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL), YDSTACK=YLSTACK)
   ENDDO
   !$OMP END PARALLEL DO
 

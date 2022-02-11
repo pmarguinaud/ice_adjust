@@ -4,55 +4,17 @@ use Fxtran;
 use strict;
 use Data::Dumper;
 
-sub removeListElement
-{
-  my $x = shift;
-
-  my $nn = $x->nodeName;
-
-  my ($p) = $x->parentNode;
-  
-  my @cf = &F ('following-sibling::text()[contains(.,",")]', $x);   
-  my @cp = &F ('preceding-sibling::text()[contains(.,",")]', $x);   
-  
-  if (@cf)
-    {   
-      $cf[+0]->unbindNode (); 
-    }   
-  elsif (@cp)
-    {   
-      $cp[-1]->unbindNode (); 
-    }   
-  
-  $x->parentNode->appendChild (&t (' '));
-  my $l = $x->parentNode->lastChild;
-  
-  $x->unbindNode (); 
-  
-  while ($l)
-    {   
-      last if (($l->nodeName ne '#text') && ($l->nodeName ne 'cnt'));
-      $l = $l->previousSibling;
-      last unless ($l);
-      $l->nextSibling->unbindNode;
-    }   
-
-  return &F ("./$nn", $p) ? 0 : 1;
-}
-
-
-
 sub addStack
 {
   my $d = shift;
 
-  my @call = &F ('.//call-stmt[string(procedure-designator)!="ABOR1" and string(procedure-designator)!="REDUCE"]', $d);
+  my @call = &F ('.//call-stmt[string(procedure-designator)!="ABOR1" and string(procedure-designator)!="REDUCE" and string(procedure-designator)!="DR_HOOK"]', $d);
 
   for my $call (@call)
     {
       my ($argspec) = &F ('./arg-spec', $call);
       $argspec->appendChild (&t (', '));
-      $argspec->appendChild (&n ("<named-E><N><n>YLSTACK</n></N></named-E>"));
+      $argspec->appendChild (&n ("<arg><arg-N><k>YDSTACK</k></arg-N>=<named-E><N><n>YLSTACK</n></N></named-E></arg>"));
     }
 
   my ($dummy_arg_lt) = &F ('.//subroutine-stmt/dummy-arg-LT', $d);
@@ -117,26 +79,25 @@ sub addStack
   $C->parentNode->insertBefore (&t ("\n"), $C);
   $C->parentNode->insertBefore (&t ("\n"), $C);
 
-  my @KLON = qw (KLON);
+  my @KLON = qw (D%NIT);
 
   for my $KLON (@KLON)
     {
-      my @en_decl = &F ('.//T-decl-stmt[not(string(.//attribute-N)="INTENT")]'
-                      . '//EN-decl[./array-spec/shape-spec-LT/shape-spec[string(./upper-bound)="?"]]', 
+      my @en_decl = &F ('.//T-decl-stmt//EN-decl[./array-spec/shape-spec-LT/shape-spec[string(./upper-bound)="?"]]', 
                       $KLON, $d);
-      
+
       for my $en_decl (@en_decl)
         {
           my ($n) = &F ('./EN-N', $en_decl, 1);
+          my ($stmt) = &Fxtran::stmt ($en_decl);
+          next if (&F ('./attribute[string(attribute-N)="INTENT"]', $stmt));
 
-          my $stmt = &Fxtran::stmt ($en_decl);
-      
           my ($t) = &F ('./_T-spec_',   $stmt);     &Fxtran::expand ($t); $t = $t->textContent;
           my ($s) = &F ('./array-spec', $en_decl);  &Fxtran::expand ($s); $s = $s->textContent;
       
           $stmt->parentNode->insertBefore (my $temp = &t ("temp ($t, $n, $s)"), $stmt);
       
-          if (&removeListElement ($en_decl))
+          if (&Fxtran::removeListElement ($en_decl))
             {
               $stmt->unbindNode ();
             }
