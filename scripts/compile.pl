@@ -124,6 +124,9 @@ sub preProcessIfNewerCPU
       &Loop::removeJlonLoops ($d);
       &saveToFile ($d, "tmp/removeJlonLoops/$f2");
 
+      &ReDim::reDim ($d);
+      &saveToFile ($d, "tmp/reDim/$f2");
+
 
       'FileHandle'->new (">$f2")->print ($d->textContent ());
 
