@@ -5,7 +5,7 @@
 
 #define temp(t, n, s) t, DIMENSION s :: n; POINTER (IP_##n##_, n)
 
-#define alloc(n) IP_##n##_=YLSTACK%L;YLSTACK%L=YLSTACK%L+8*SIZE(n);IF(YLSTACK%L>YLSTACK%U)CALL ABOR1(__FILE__)
+#define alloc(n) IP_##n##_=YLSTACK%L;YLSTACK%L=YLSTACK%L+8*SIZE(n);IF(YLSTACK%L>YLSTACK%U)CALL SOF(__FILE__, __LINE__)
 
 #else
 

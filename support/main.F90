@@ -70,7 +70,9 @@ INTEGER                  :: HSUBG_MF_PDF
 REAL                     :: PTSTEP    
 LOGICAL                  :: LLCHECK
 INTEGER                  :: IBLOCK1, IBLOCK2
+INTEGER                  :: ISTSZ
 
+REAL, ALLOCATABLE :: PSTACK(:,:)
 TYPE (STACK) :: YLSTACK
 
 REAL(KIND=8) :: TS,TE
@@ -152,6 +154,9 @@ D%NKE  = 1
 D%NKTB = 1
 D%NKTE = KLEV
 
+ISTSZ = NPROMA * 20 * KLEV
+ALLOCATE (PSTACK (ISTSZ, NGPBLKS))
+
 TS = OMP_GET_WTIME ()
 
 ZTD = 0.
@@ -160,6 +165,15 @@ ZTC = 0.
 IF (LLONEBYONE) THEN
 
   DO IBL = 1, NGPBLKS
+
+#ifdef USE_STACK
+    YLSTACK%L = LOC (PSTACK (1, IBL))
+    YLSTACK%U = YLSTACK%L + ISTSZ * KIND (PSTACK)
+#else
+    YLSTACK%L = 0
+    YLSTACK%U = 0
+#endif
+
     DO JLON = 1, NPROMA
     D%NIB = JLON
     D%NIE = JLON
