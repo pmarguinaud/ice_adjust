@@ -1,13 +1,12 @@
 
-FC2 = /home/mf/dp/marp/gco/apps/mkpack/support/wrapper/mimpifc-18.0.5.274 -convert big_endian -assume byterecl -align array64byte,all \
+FC2I = /home/mf/dp/marp/gco/apps/mkpack/support/wrapper/mimpifc-18.0.5.274 -convert big_endian -assume byterecl -align array64byte,all \
      -traceback -fpic -qopenmp -qopenmp-threadprivate compat -fp-model source -qopt-report=5 -qopt-report-phase=vec -ftz \
      -diag-disable=remark,cpu-dispatch -r8 -g -O2 -march=core-avx2 -finline-functions -finline-limit=500 -Winline -qopt-prefetch=4 \
      -fast-transcendentals -fimf-use-svml -no-fma -DREPRO48
 
-FC0 = /home/mf/dp/marp/gco/apps/mkpack/support/wrapper/mimpifc-18.0.5.274 -convert big_endian -assume byterecl -g -O0 -r8 -check bounds -DREPRO48 \
+FC0I = /home/mf/dp/marp/gco/apps/mkpack/support/wrapper/mimpifc-18.0.5.274 -convert big_endian -assume byterecl -g -O0 -r8 -check bounds -DREPRO48 \
       -init=arrays,snan -fp-stack-check -ftrapuv -fpe0 -fp-speculation=strict -check uninit -check pointers -traceback -align array64byte,all -qopenmp -DUSE_STACK
 
-
-FC = $(FC0)
+FC = $(FC0I)
 
 

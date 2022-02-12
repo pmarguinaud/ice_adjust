@@ -1,0 +1,8 @@
+
+FC2P = nvfortran -mp -byteswapio -Mlarge_arrays -fast -O3 -DUSE_STACK
+FC0P = nvfortran -mp -byteswapio -Mlarge_arrays       -O0             -g -Ktrap=inv
+
+
+FC = $(FC0P)
+
+
