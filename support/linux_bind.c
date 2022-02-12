@@ -33,8 +33,6 @@ static char * getcpumask (char *buffer, size_t size)
 void linux_bind_dump_ (int * prank, int * psize)
 {
   int rank = *prank;
-  int size = *psize;
-  int icpu;
   unsigned int ncpu;
   FILE * fp = NULL;
   char f[256];
@@ -108,7 +106,6 @@ void linux_bind_dump_ (int * prank, int * psize)
 void linux_bind_ (int * prank, int * psize)
 {
   int rank = *prank;
-  int size = *psize;
   FILE * fp = fopen (LINUX_BIND_TXT, "r");
   int i;
   size_t len  = 256;
