@@ -182,7 +182,7 @@ DO ITIME = 1, NTIME
 
 #ifdef _OPENACC
 JBLK1 = 1 
-JBLK2 = KGPBLK
+JBLK2 = NGPBLKS
 #endif
 
 #ifdef USE_OPENMP
@@ -192,18 +192,20 @@ JBLK1 = 1 +  (NGPBLKS * (ITID+0)) / NTID
 JBLK2 =      (NGPBLKS * (ITID+1)) / NTID
 #endif
 
-PRINT *, " JBLK1, JBLK2 = ", JBLK1, JBLK2
-
 !$acc parallel loop gang vector private (YLSTACK, IBL, JLON, D) collapse (2)
 
   DO IBL = JBLK1, JBLK2
 
-    D = D0
 
 #ifdef _OPENACC
   DO JLON = 1, NPROMA
+    D = D0
     D%NIB = JLON
     D%NIE = JLON
+#endif
+
+#ifdef USE_OPENMP
+    D = D0
 #endif
 
 #ifdef USE_STACK

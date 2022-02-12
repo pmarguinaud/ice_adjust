@@ -6,6 +6,7 @@ FC0 = /opt/softs/gcc/9.2.0/bin/gfortran -fconvert=swap -fno-second-underscore -f
          -fno-range-check -g -pipe -ffree-form  -DLINUX -DLITTLE_ENDIAN -DLITTLE -g -O0 -fdefault-real-8 -DREPRO48 -Wl,-rpath,/opt/softs/gcc/9.2.0/lib64
 
 
+CC = /opt/softs/gcc/9.2.0/bin/gcc -fopenmp  -DLINUX -Wl,-rpath,/opt/softs/gcc/9.2.0/lib64
 
 FC = $(FC2)
 
