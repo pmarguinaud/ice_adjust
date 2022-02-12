@@ -56,7 +56,7 @@ REAL, ALLOCATABLE   :: PHLI_HCF_OUT   (:,:,:,:)
 INTEGER :: NPROMA, NGPBLKS, NFLEVG
 INTEGER :: IBL, JLON, JLEV
 
-TYPE(DIMPHYEX_t)         :: D
+TYPE(DIMPHYEX_t)         :: D, D0
 TYPE(RAIN_ICE_PARAM_t)   :: ICEP
 INTEGER                  :: HFRAC_ICE
 INTEGER                  :: HCONDENS
@@ -70,7 +70,8 @@ INTEGER                  :: HSUBG_MF_PDF
 REAL                     :: PTSTEP    
 LOGICAL                  :: LLCHECK
 INTEGER                  :: IBLOCK1, IBLOCK2
-INTEGER                  :: ISTSZ
+INTEGER                  :: ISTSZ, JBLK1, JBLK2
+INTEGER                  :: NTID, ITID
 
 REAL, ALLOCATABLE :: PSTACK(:,:)
 TYPE (STACK) :: YLSTACK
@@ -139,20 +140,20 @@ HSUBG_MF_PDF = S_TRIANGLE
 PTSTEP       = 50.000000000000000    
 LMFCONV      = .TRUE.
 
-D%NIT  = NPROMA
-D%NIB  = 1
-D%NIE  = NPROMA
-D%NJT  = 1
-D%NJB  = 1
-D%NJE  = 1
-D%NKL  = -1
-D%NKT  = KLEV
-D%NKA  = KLEV
-D%NKU  = 1
-D%NKB  = KLEV 
-D%NKE  = 1
-D%NKTB = 1
-D%NKTE = KLEV
+D0%NIT  = NPROMA
+D0%NIB  = 1
+D0%NIE  = NPROMA
+D0%NJT  = 1
+D0%NJB  = 1
+D0%NJE  = 1
+D0%NKL  = -1
+D0%NKT  = KLEV
+D0%NKA  = KLEV
+D0%NKU  = 1
+D0%NKB  = KLEV 
+D0%NKE  = 1
+D0%NKTB = 1
+D0%NKTE = KLEV
 
 ISTSZ = NPROMA * 20 * KLEV
 ALLOCATE (PSTACK (ISTSZ, NGPBLKS))
@@ -162,9 +163,48 @@ TS = OMP_GET_WTIME ()
 ZTD = 0.
 ZTC = 0.
 
-IF (LLONEBYONE) THEN
+DO ITIME = 1, NTIME
 
-  DO IBL = 1, NGPBLKS
+  TSD = OMP_GET_WTIME ()
+
+!$acc data &
+!$acc      & copyin  (D0, CST, ICEP, NEB, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3, HBUNAME, OSUBG_COND, OSIGMAS, OCND2, HSUBG_MF_PDF, PTSTEP, LMFCONV, &
+!$acc      &          ZSIGQSAT, PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV, PPABSM, ZZZ, PCF_MF, PRC_MF, PRI_MF, ZRS, ZICE_CLD_WGT) &
+!$acc      & copy    (PRS, PTHS), &
+!$acc      & copyout (PSRCS, PCLDFR, PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF) &
+!$acc      & create  (PSTACK) 
+
+  TSC = OMP_GET_WTIME ()
+
+#ifdef USE_OPENMP
+!$OMP PARALLEL PRIVATE (D, ITID, JBLK1, JBLK2)
+#endif
+
+#ifdef _OPENACC
+JBLK1 = 1 
+JBLK2 = KGPBLK
+#endif
+
+#ifdef USE_OPENMP
+NTID = OMP_GET_MAX_THREADS ()
+ITID = OMP_GET_THREAD_NUM ()
+JBLK1 = 1 +  (NGPBLKS * (ITID+0)) / NTID
+JBLK2 =      (NGPBLKS * (ITID+1)) / NTID
+#endif
+
+PRINT *, " JBLK1, JBLK2 = ", JBLK1, JBLK2
+
+!$acc parallel loop gang vector private (YLSTACK, IBL, JLON, D) collapse (2)
+
+  DO IBL = JBLK1, JBLK2
+
+    D = D0
+
+#ifdef _OPENACC
+  DO JLON = 1, NPROMA
+    D%NIB = JLON
+    D%NIE = JLON
+#endif
 
 #ifdef USE_STACK
     YLSTACK%L = LOC (PSTACK (1, IBL))
@@ -174,9 +214,6 @@ IF (LLONEBYONE) THEN
     YLSTACK%U = 0
 #endif
 
-    DO JLON = 1, NPROMA
-    D%NIB = JLON
-    D%NIE = JLON
     CALL ICE_ADJUST (D, CST, ICEP, NEB, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3, HBUNAME, OSUBG_COND,                                &
     & OSIGMAS, OCND2, HSUBG_MF_PDF, PTSTEP, ZSIGQSAT (:, :, IBL), PRHODJ=PRHODJ (:, :, :, IBL), PEXNREF=PEXNREF (:, :, :, IBL), &
     & PRHODREF=PRHODREF (:, :, :, IBL), PSIGS=PSIGS (:, :, :, IBL), LMFCONV=LMFCONV, PMFCONV=PMFCONV (:, :, :, IBL),            &
@@ -186,43 +223,34 @@ IF (LLONEBYONE) THEN
     & PSRCS=PSRCS (:, :, :, IBL), PCLDFR=PCLDFR (:, :, :, IBL), PRR=ZRS(:, :, :, 3, IBL), PRI=ZRS(:, :, :, 4, IBL),             &
     & PRIS=PRS(:, :, :, 4, IBL), PRS=ZRS(:, :, :, 5, IBL), PRG=ZRS(:, :, :, 6, IBL), PHLC_HRC=PHLC_HRC(:, :, :, IBL),           &
     & PHLC_HCF=PHLC_HCF(:, :, :, IBL), PHLI_HRI=PHLI_HRI(:, :, :, IBL), PHLI_HCF=PHLI_HCF(:, :, :, IBL),                        &
-    & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL), YDSTACK=YLSTACK)
+    & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL) &
+#ifdef USE_STACK
+    & , YDSTACK=YLSTACK &
+#endif
+    & )
+
+#ifdef _OPENACC
     ENDDO
+#endif
+
   ENDDO
 
-ELSE
+#ifdef USE_OPENMP
+!$OMP END PARALLEL
+#endif
 
-DO ITIME = 1, NTIME
-
-  TSD = OMP_GET_WTIME ()
-!
-  TSC = OMP_GET_WTIME ()
-
-  !$OMP PARALLEL DO PRIVATE (IBL)
-  DO IBL = 1, NGPBLKS
-    CALL ICE_ADJUST (D, CST, ICEP, NEB, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3, HBUNAME, OSUBG_COND,                                &
-    & OSIGMAS, OCND2, HSUBG_MF_PDF, PTSTEP, ZSIGQSAT (:, :, IBL), PRHODJ=PRHODJ (:, :, :, IBL), PEXNREF=PEXNREF (:, :, :, IBL), &
-    & PRHODREF=PRHODREF (:, :, :, IBL), PSIGS=PSIGS (:, :, :, IBL), LMFCONV=LMFCONV, PMFCONV=PMFCONV (:, :, :, IBL),            &
-    & PPABST=PPABSM (:, :, :, IBL), PZZ=ZZZ (:, :, :, IBL), PEXN=PEXNREF (:, :, :, IBL), PCF_MF=PCF_MF (:, :, :, IBL),          &
-    & PRC_MF=PRC_MF (:, :, :, IBL), PRI_MF=PRI_MF  (:, :, :, IBL), PRV=ZRS(:, :, :, 1, IBL), PRC=ZRS(:, :, :, 2, IBL),          &
-    & PRVS=PRS(:, :, :, 1, IBL), PRCS=PRS(:, :, :, 2, IBL), PTH=ZRS(:, :, :, 0, IBL), PTHS=PTHS (:, :, :, IBL),                 &
-    & PSRCS=PSRCS (:, :, :, IBL), PCLDFR=PCLDFR (:, :, :, IBL), PRR=ZRS(:, :, :, 3, IBL), PRI=ZRS(:, :, :, 4, IBL),             &
-    & PRIS=PRS(:, :, :, 4, IBL), PRS=ZRS(:, :, :, 5, IBL), PRG=ZRS(:, :, :, 6, IBL), PHLC_HRC=PHLC_HRC(:, :, :, IBL),           &
-    & PHLC_HCF=PHLC_HCF(:, :, :, IBL), PHLI_HRI=PHLI_HRI(:, :, :, IBL), PHLI_HCF=PHLI_HCF(:, :, :, IBL),                        &
-    & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL), YDSTACK=YLSTACK)
-  ENDDO
-  !$OMP END PARALLEL DO
+!$acc end parallel loop
 
   TEC = OMP_GET_WTIME ()
-!
+
+!$acc end data
+
   TED = OMP_GET_WTIME ()
 
   ZTC = ZTC + (TEC - TSC)
   ZTD = ZTD + (TED - TSD)
 
 ENDDO
-
-ENDIF
 
 TE = OMP_GET_WTIME()
 

@@ -123,16 +123,16 @@ sub preProcessIfNewerCPU
       &Loop::arraySyntaxLoop ($d);
       &saveToFile ($d, "tmp/arraySyntaxRange/$f2");
 
-      &Loop::removeJlonLoops ($d);
-      &saveToFile ($d, "tmp/removeJlonLoops/$f2");
+#     &Loop::removeJlonLoops ($d);
+#     &saveToFile ($d, "tmp/removeJlonLoops/$f2");
 
-      &ReDim::reDim ($d);
-      &saveToFile ($d, "tmp/reDim/$f2");
+#     &ReDim::reDim ($d);
+#     &saveToFile ($d, "tmp/reDim/$f2");
 
-      &addSeqDirective ($d);
+#     &addSeqDirective ($d);
 
-      &Stack::addStack ($d);
-      &saveToFile ($d, "tmp/addStack/$f2");
+#     &Stack::addStack ($d);
+#     &saveToFile ($d, "tmp/addStack/$f2");
 
       &DrHook::remove ($d);
       &saveToFile ($d, "tmp/drhook/$f2");
