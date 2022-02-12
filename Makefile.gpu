@@ -1,0 +1,5 @@
+FC0 = nvfortran -mp -byteswapio -Mlarge_arrays       -acc=gpu -Minfo=accel,all,intensity,ccff -gpu=lineinfo -O0 -Mcuda -DUSE_STACK -r8
+FC2 = nvfortran -mp -byteswapio -Mlarge_arrays -fast -acc=gpu -Minfo=accel,all,intensity,ccff -gpu=lineinfo -O3 -Mcuda -DUSE_STACK -r8
+
+FC = $(FC0)
+

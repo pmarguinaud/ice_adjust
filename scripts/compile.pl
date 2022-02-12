@@ -97,6 +97,7 @@ sub preProcessIfNewerCPU
   use Dimension;
   use Construct;
   use ReDim;
+  use DrHook;
 
   my ($f1, $f2) = @_;
 
@@ -133,6 +134,9 @@ sub preProcessIfNewerCPU
       &Stack::addStack ($d);
       &saveToFile ($d, "tmp/addStack/$f2");
 
+      &DrHook::remove ($d);
+      &saveToFile ($d, "tmp/drhook/$f2");
+
       'FileHandle'->new (">$f2")->print ($d->textContent ());
 
 #     &Fxtran::intfb ($f2);
@@ -151,6 +155,7 @@ sub preProcessIfNewerGPU
   use Loop;
   use Expr;
   use ReDim;
+  use DrHook;
 
   my ($f1, $f2) = @_;
 
@@ -165,31 +170,31 @@ sub preProcessIfNewerGPU
       &prune ($d);
       &saveToFile ($d, "tmp/prune/$f2");
 
-#     &Inline::inlineContainedSubroutines ($d);
-#     &saveToFile ($d, "tmp/inlineContainedSubroutines/$f2");
+      &Inline::inlineContainedSubroutines ($d);
+      &saveToFile ($d, "tmp/inlineContainedSubroutines/$f2");
 
-#     &Associate::resolveAssociates ($d);
-#     &saveToFile ($d, "tmp/resolveAssociates/$f2");
+      &Dimension::attachArraySpecToEntity ($d);
+      &saveToFile ($d, "tmp/attachArraySpecToEntity/$f2");
 
-#     &Vector::hoistJlonLoops ($d);
-#     &saveToFile ($d, "tmp/hoistJlonLoops/$f2");
+      &Construct::changeIfStatementsInIfConstructs ($d);
+      &saveToFile ($d, "tmp/changeIfStatementsInIfConstructs/$f2");
 
-#     &Vector::addDirectives ($d);
-#     &saveToFile ($d, "tmp/addDirectives/$f2");
-#
-#     &Loop::removeJlonLoops ($d);
-#     &saveToFile ($d, "tmp/removeJlonLoops/$f2");
+      &Loop::arraySyntaxLoop ($d);
+      &saveToFile ($d, "tmp/arraySyntaxRange/$f2");
 
-#     &ReDim::reDim ($d);
-#     &saveToFile ($d, "tmp/reDim/$f2");
+      &Loop::removeJlonLoops ($d);
+      &saveToFile ($d, "tmp/removeJlonLoops/$f2");
 
-#     &addSeqDirective ($d);
+      &ReDim::reDim ($d);
+      &saveToFile ($d, "tmp/reDim/$f2");
 
-#     &Stack::addStack ($d);
-#     &saveToFile ($d, "tmp/addStack/$f2");
+      &addSeqDirective ($d);
 
-#     &Expr::replacePowByMultiplyOrExp ($d);
-#     &saveToFile ($d, "tmp/resolveAssociates/$f2");
+      &Stack::addStack ($d);
+      &saveToFile ($d, "tmp/addStack/$f2");
+
+      &DrHook::remove ($d);
+      &saveToFile ($d, "tmp/drhook/$f2");
 
       'FileHandle'->new (">$f2")->print ($d->textContent ());
 
@@ -197,7 +202,7 @@ sub preProcessIfNewerGPU
     }
 }
 
-my @opts_f = qw (update compile kernels single-block);
+my @opts_f = qw (update compile);
 my @opts_s = qw (arch);
 
 &GetOptions
