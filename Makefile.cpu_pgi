@@ -4,6 +4,6 @@ FC0P = nvfortran -mp -byteswapio -Mlarge_arrays       -O0 -g -Ktrap=inv  -r8 -DU
 
 CC = pgcc -mp -DLINUX
 
-FC = $(FC0P)
+FC = $(FC2P)
 
 

@@ -3,5 +3,5 @@ FC2 = nvfortran -mp -byteswapio -Mlarge_arrays -fast -acc=gpu -Minfo=accel,all,i
 
 CC = pgcc -mp -DLINUX
 
-FC = $(FC0)
+FC = $(FC2)
 
