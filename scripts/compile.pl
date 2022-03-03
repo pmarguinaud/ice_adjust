@@ -134,8 +134,8 @@ sub preProcessIfNewerCPU
 #     &Stack::addStack ($d);
 #     &saveToFile ($d, "tmp/addStack/$f2");
 
-      &DrHook::remove ($d);
-      &saveToFile ($d, "tmp/drhook/$f2");
+#     &DrHook::remove ($d);
+#     &saveToFile ($d, "tmp/drhook/$f2");
 
       'FileHandle'->new (">$f2")->print ($d->textContent ());
 
