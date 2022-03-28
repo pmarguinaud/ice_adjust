@@ -60,15 +60,15 @@ INTEGER :: IBL, JLON, JLEV
 
 TYPE(DIMPHYEX_t)         :: D, D0
 TYPE(RAIN_ICE_PARAM_t)   :: ICEP
-INTEGER                  :: HFRAC_ICE
-INTEGER                  :: HCONDENS
-INTEGER                  :: HLAMBDA3 
-INTEGER                  :: HBUNAME  
+CHARACTER(LEN=1)         :: HFRAC_ICE
+CHARACTER(LEN=80)        :: HCONDENS
+CHARACTER(LEN=4)         :: HLAMBDA3 ! formulation for lambda3 coeff
+CHARACTER(LEN=4)         :: HBUNAME  ! Name of the budget
 LOGICAL                  :: OSUBG_COND
 LOGICAL                  :: OSIGMAS  
 LOGICAL                  :: OCND2    
 LOGICAL                  :: LMFCONV
-INTEGER                  :: HSUBG_MF_PDF
+CHARACTER(LEN=80)        :: HSUBG_MF_PDF
 REAL                     :: PTSTEP    
 LOGICAL                  :: LLCHECK
 INTEGER                  :: IBLOCK1, IBLOCK2
@@ -142,14 +142,14 @@ ICEP%XACRIAUTI = 6.2974856647312144E-002
 ICEP%XBCRIAUTI = -3.3840957210994582    
 
 
-HFRAC_ICE    = S_S
-HCONDENS     = S_CB02
-HLAMBDA3     = S_CB
-HBUNAME      = S_DEPI
+HFRAC_ICE    = 'S'
+HCONDENS     = 'CB02'
+HLAMBDA3     = 'CB'
+HBUNAME      = 'DEPI'
 OSUBG_COND   = .TRUE.
 OSIGMAS      = .TRUE.
 OCND2        = .FALSE.
-HSUBG_MF_PDF = S_TRIANGLE
+HSUBG_MF_PDF = 'TRIANGLE'
 PTSTEP       = 50.000000000000000    
 LMFCONV      = .TRUE.
 

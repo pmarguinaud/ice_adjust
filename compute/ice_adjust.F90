@@ -111,7 +111,6 @@ USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 USE MODD_DIMPHYEX,   ONLY: DIMPHYEX_t
 USE MODD_CST,        ONLY: CST_t
 USE MODD_NEB,        ONLY: NEB_t
-USE MODD_STRINGS
 USE MODD_BUDGET,     ONLY: TBUDGETDATA, TBUDGETCONF_t, NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI
 USE MODD_RAIN_ICE_PARAM, ONLY : RAIN_ICE_PARAM_t
 !
@@ -131,10 +130,10 @@ TYPE(RAIN_ICE_PARAM_t),   INTENT(IN)    :: ICEP
 TYPE(NEB_t),              INTENT(IN)    :: NEB
 TYPE(TBUDGETCONF_t),      INTENT(IN)    :: BUCONF
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
-INTEGER,                  INTENT(IN)    :: HFRAC_ICE
-INTEGER,                  INTENT(IN)    :: HCONDENS
-INTEGER,                  INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
-INTEGER,                  INTENT(IN)    :: HBUNAME  ! Name of the budget
+CHARACTER(LEN=1),         INTENT(IN)    :: HFRAC_ICE
+CHARACTER(LEN=80),        INTENT(IN)    :: HCONDENS
+CHARACTER(LEN=4),         INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
+CHARACTER(LEN=4),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL,                  INTENT(IN)    :: OSIGMAS  ! Switch for Sigma_s: 
@@ -143,7 +142,7 @@ LOGICAL,                  INTENT(IN)    :: OSIGMAS  ! Switch for Sigma_s:
 LOGICAL,                  INTENT(IN)    :: OCND2    ! logical switch to sparate liquid 
                                                     ! and ice
                                                     ! more rigid (DEFALT value : .FALSE.)
-INTEGER,                  INTENT(IN)    :: HSUBG_MF_PDF
+CHARACTER(LEN=80),        INTENT(IN)    :: HSUBG_MF_PDF
 REAL,                     INTENT(IN)   :: PTSTEP    ! Double Time step
                                                     ! (single if cold start)
 REAL, DIMENSION(D%NIT,D%NJT),                INTENT(IN)    :: PSIGQSAT  ! coeff applied to qsat variance contribution
@@ -332,12 +331,12 @@ DO JK=D%NKTB,D%NKTE
         !
         IF(PRESENT(PHLC_HRC) .AND. PRESENT(PHLC_HCF)) THEN
           ZCRIAUT=ICEP%XCRIAUTC/PRHODREF(JI,JJ,JK)
-          IF(HSUBG_MF_PDF==S_NONE)THEN
+          IF(HSUBG_MF_PDF=='NONE')THEN
             IF(ZW1*PTSTEP>PCF_MF(JI,JJ,JK) * ZCRIAUT) THEN
               PHLC_HRC(JI,JJ,JK)=PHLC_HRC(JI,JJ,JK)+ZW1*PTSTEP
               PHLC_HCF(JI,JJ,JK)=MIN(1.,PHLC_HCF(JI,JJ,JK)+PCF_MF(JI,JJ,JK))
             ENDIF
-          ELSEIF(HSUBG_MF_PDF==S_TRIANGLE)THEN
+          ELSEIF(HSUBG_MF_PDF=='TRIANGLE')THEN
             !ZHCF is the precipitating part of the *cloud* and not of the grid cell
             IF(ZW1*PTSTEP>PCF_MF(JI,JJ,JK)*ZCRIAUT) THEN
               ZHCF=1.-.5*(ZCRIAUT*PCF_MF(JI,JJ,JK) / MAX(1.E-20, ZW1*PTSTEP))**2
@@ -360,12 +359,12 @@ DO JK=D%NKTB,D%NKTE
         ENDIF
         IF(PRESENT(PHLI_HRI) .AND. PRESENT(PHLI_HCF)) THEN
           ZCRIAUT=MIN(ICEP%XCRIAUTI,10**(ICEP%XACRIAUTI*(ZT(JI,JJ,JK)-CST%XTT)+ICEP%XBCRIAUTI))
-          IF(HSUBG_MF_PDF==S_NONE)THEN
+          IF(HSUBG_MF_PDF=='NONE')THEN
             IF(ZW2*PTSTEP>PCF_MF(JI,JJ,JK) * ZCRIAUT) THEN
               PHLI_HRI(JI,JJ,JK)=PHLI_HRI(JI,JJ,JK)+ZW2*PTSTEP
               PHLI_HCF(JI,JJ,JK)=MIN(1.,PHLI_HCF(JI,JJ,JK)+PCF_MF(JI,JJ,JK))
             ENDIF
-          ELSEIF(HSUBG_MF_PDF==S_TRIANGLE)THEN
+          ELSEIF(HSUBG_MF_PDF=='TRIANGLE')THEN
             !ZHCF is the precipitating part of the *cloud* and not of the grid cell
             IF(ZW2*PTSTEP>PCF_MF(JI,JJ,JK)*ZCRIAUT) THEN
               ZHCF=1.-.5*(ZCRIAUT*PCF_MF(JI,JJ,JK) / (ZW2*PTSTEP))**2

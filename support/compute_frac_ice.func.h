@@ -23,6 +23,7 @@
 !! --------------------------------------------------------------------------
 !
 INTEGER,          INTENT(IN)    :: HFRAC_ICE       ! scheme to use
+CHARACTER(LEN=1), INTENT(IN)    :: HFRAC_ICE       ! scheme to use
 TYPE(NEB_t),      INTENT(IN)    :: NEB
 REAL,             INTENT(IN)    :: PT              ! temperature
 REAL,             INTENT(INOUT) :: PFRAC_ICE       ! Ice fraction (1 for ice only, 0 for liquid only)
@@ -34,13 +35,13 @@ INTEGER,          INTENT(OUT)   :: KERR            ! Error code in return
 !
 KERR=0
 SELECT CASE(HFRAC_ICE)
-  CASE (S_T) !using Temperature
+  CASE ('T') !using Temperature
     PFRAC_ICE = MAX( 0., MIN(1., (( NEB%XTMAXMIX - PT ) / ( NEB%XTMAXMIX - NEB%XTMINMIX )) ) ) ! freezing interval
-  CASE (S_O) !using Temperature with old formulae
+  CASE ('O') !using Temperature with old formulae
     PFRAC_ICE = MAX( 0., MIN(1., (( CST%XTT - PT ) / 40.) ) ) ! freezing interval
-  CASE (S_N) !No ice
+  CASE ('N') !No ice
     PFRAC_ICE = 0.
-  CASE (S_S) !Same as previous
+  CASE ('S') !Same as previous
     ! (almost) nothing to do
     PFRAC_ICE = MAX( 0., MIN(1., PFRAC_ICE ) )
   CASE DEFAULT
