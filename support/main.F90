@@ -56,7 +56,7 @@ REAL, ALLOCATABLE   :: PHLI_HRI_OUT   (:,:,:,:)
 REAL, ALLOCATABLE   :: PHLI_HCF_OUT   (:,:,:,:)   
 
 INTEGER :: NPROMA, NGPBLKS, NFLEVG
-INTEGER :: IBL, JLON, JLEV
+INTEGER :: IBL, JLON, JLEV, JLON1, JLON2
 
 TYPE(DIMPHYEX_t)         :: D, D0
 TYPE(RAIN_ICE_PARAM_t)   :: ICEP
@@ -112,9 +112,9 @@ IF (LLBIND) THEN
   CALL LINUX_BIND_DUMP (IRANK, ISIZE)
 ENDIF
 
-CALL GETDATA (NPROMA, NGPBLKS, NFLEVG, PRHODJ, PEXNREF, PRHODREF, PPABSM, PTHT, ZICE_CLD_WGT,     &
-& ZSIGQSAT, PSIGS, PMFCONV, PRC_MF, PRI_MF, PCF_MF, PTHS, PRS, PSRCS, PCLDFR, PHLC_HRC, PHLC_HCF, &
-& PHLI_HRI, PHLI_HCF, ZRS, ZZZ, PRS_OUT, PSRCS_OUT, PCLDFR_OUT, PHLC_HRC_OUT, PHLC_HCF_OUT,       &
+CALL GETDATA (NPROMA * NGPBLKS, 1_JPIM, NFLEVG, PRHODJ, PEXNREF, PRHODREF, PPABSM, PTHT, ZICE_CLD_WGT,  &
+& ZSIGQSAT, PSIGS, PMFCONV, PRC_MF, PRI_MF, PCF_MF, PTHS, PRS, PSRCS, PCLDFR, PHLC_HRC, PHLC_HCF,       &
+& PHLI_HRI, PHLI_HCF, ZRS, ZZZ, PRS_OUT, PSRCS_OUT, PCLDFR_OUT, PHLC_HRC_OUT, PHLC_HCF_OUT,             &
 & PHLI_HRI_OUT, PHLI_HCF_OUT, LLVERBOSE)
 
 
@@ -153,9 +153,9 @@ HSUBG_MF_PDF = S_TRIANGLE
 PTSTEP       = 50.000000000000000    
 LMFCONV      = .TRUE.
 
-D0%NIT  = NPROMA
+D0%NIT  = NPROMA * NGPBLKS
 D0%NIB  = 1
-D0%NIE  = NPROMA
+D0%NIE  = NPROMA * NGPBLKS
 D0%NJT  = 1
 D0%NJB  = 1
 D0%NJE  = 1
@@ -168,8 +168,8 @@ D0%NKE  = 1
 D0%NKTB = 1
 D0%NKTE = KLEV
 
-ISTSZ = NPROMA * 20 * KLEV
-ALLOCATE (PSTACK (ISTSZ, NGPBLKS))
+ISTSZ = NPROMA * NGPBLKS * 20 * KLEV
+ALLOCATE (PSTACK (ISTSZ, 1))
 
 TS = OMP_GET_WTIME ()
 
@@ -219,32 +219,34 @@ JBLK2 =      (NGPBLKS * (ITID+1)) / NTID
 #ifdef _OPENACC
   DO JLON = 1, NPROMA
     D = D0
-    D%NIB = JLON
-    D%NIE = JLON
+    D%NIB = (IBL - 1) * NPROMA + JLON
+    D%NIE = (IBL - 1) * NPROMA + JLON
 #endif
 
 #ifdef USE_OPENMP
     D = D0
+    D%NIB = (IBL - 1) * NPROMA + 1
+    D%NIE =  IBL      * NPROMA
 #endif
 
 #ifdef USE_STACK
-    YLSTACK%L = LOC (PSTACK (1, IBL))
+    YLSTACK%L = LOC (PSTACK (1, 1))
     YLSTACK%U = YLSTACK%L + ISTSZ * KIND (PSTACK)
 #else
     YLSTACK%L = 0
     YLSTACK%U = 0
 #endif
 
-    CALL ICE_ADJUST (D, CST, ICEP, NEB, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3, HBUNAME, OSUBG_COND,                                &
-    & OSIGMAS, OCND2, HSUBG_MF_PDF, PTSTEP, ZSIGQSAT (:, :, IBL), PRHODJ=PRHODJ (:, :, :, IBL), PEXNREF=PEXNREF (:, :, :, IBL), &
-    & PRHODREF=PRHODREF (:, :, :, IBL), PSIGS=PSIGS (:, :, :, IBL), LMFCONV=LMFCONV, PMFCONV=PMFCONV (:, :, :, IBL),            &
-    & PPABST=PPABSM (:, :, :, IBL), PZZ=ZZZ (:, :, :, IBL), PEXN=PEXNREF (:, :, :, IBL), PCF_MF=PCF_MF (:, :, :, IBL),          &
-    & PRC_MF=PRC_MF (:, :, :, IBL), PRI_MF=PRI_MF  (:, :, :, IBL), PRV=ZRS(:, :, :, 1, IBL), PRC=ZRS(:, :, :, 2, IBL),          &
-    & PRVS=PRS(:, :, :, 1, IBL), PRCS=PRS(:, :, :, 2, IBL), PTH=ZRS(:, :, :, 0, IBL), PTHS=PTHS (:, :, :, IBL),                 &
-    & PSRCS=PSRCS (:, :, :, IBL), PCLDFR=PCLDFR (:, :, :, IBL), PRR=ZRS(:, :, :, 3, IBL), PRI=ZRS(:, :, :, 4, IBL),             &
-    & PRIS=PRS(:, :, :, 4, IBL), PRS=ZRS(:, :, :, 5, IBL), PRG=ZRS(:, :, :, 6, IBL), PHLC_HRC=PHLC_HRC(:, :, :, IBL),           &
-    & PHLC_HCF=PHLC_HCF(:, :, :, IBL), PHLI_HRI=PHLI_HRI(:, :, :, IBL), PHLI_HCF=PHLI_HCF(:, :, :, IBL),                        &
-    & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, IBL) &
+    CALL ICE_ADJUST (D, CST, ICEP, NEB, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3, HBUNAME, OSUBG_COND,                          &
+    & OSIGMAS, OCND2, HSUBG_MF_PDF, PTSTEP, ZSIGQSAT (:, :, 1), PRHODJ=PRHODJ (:, :, :, 1), PEXNREF=PEXNREF (:, :, :, 1), &
+    & PRHODREF=PRHODREF (:, :, :, 1), PSIGS=PSIGS (:, :, :, 1), LMFCONV=LMFCONV, PMFCONV=PMFCONV (:, :, :, 1),            &
+    & PPABST=PPABSM (:, :, :, 1), PZZ=ZZZ (:, :, :, 1), PEXN=PEXNREF (:, :, :, 1), PCF_MF=PCF_MF (:, :, :, 1),            &
+    & PRC_MF=PRC_MF (:, :, :, 1), PRI_MF=PRI_MF  (:, :, :, 1), PRV=ZRS(:, :, :, 1, 1), PRC=ZRS(:, :, :, 2, 1),            &
+    & PRVS=PRS(:, :, :, 1, 1), PRCS=PRS(:, :, :, 2, 1), PTH=ZRS(:, :, :, 0, 1), PTHS=PTHS (:, :, :, 1),                   &
+    & PSRCS=PSRCS (:, :, :, 1), PCLDFR=PCLDFR (:, :, :, 1), PRR=ZRS(:, :, :, 3, 1), PRI=ZRS(:, :, :, 4, 1),               &
+    & PRIS=PRS(:, :, :, 4, 1), PRS=ZRS(:, :, :, 5, 1), PRG=ZRS(:, :, :, 6, 1), PHLC_HRC=PHLC_HRC(:, :, :, 1),             &
+    & PHLC_HCF=PHLC_HCF(:, :, :, 1), PHLI_HRI=PHLI_HRI(:, :, :, 1), PHLI_HCF=PHLI_HCF(:, :, :, 1),                        &
+    & PICE_CLD_WGT=ZICE_CLD_WGT(:, :, 1) &
 #ifdef USE_STACK
     & , YDSTACK=YLSTACK &
 #endif
@@ -286,13 +288,15 @@ PRINT *, " ZTC = ", ZTC, ZTC / REAL (NPROMA*NGPBLKS*NTIME)
 
 IF (LLCHECK .OR. LLSTAT) THEN
   DO IBL = IBLOCK1, IBLOCK2
+    JLON1 = (IBL - 1) * NPROMA + 1
+    JLON2 =  IBL      * NPROMA
     PRINT *, " IBL = ", IBL
-    CALL DIFF ("PSRCS",    PSRCS_OUT    (:,:,:,IBL), PSRCS    (:,:,:,IBL))
-    CALL DIFF ("PCLDFR",   PCLDFR_OUT   (:,:,:,IBL), PCLDFR   (:,:,:,IBL))
-    CALL DIFF ("PHLC_HRC", PHLC_HRC_OUT (:,:,:,IBL), PHLC_HRC (:,:,:,IBL))
-    CALL DIFF ("PHLC_HCF", PHLC_HCF_OUT (:,:,:,IBL), PHLC_HCF (:,:,:,IBL))
-    CALL DIFF ("PHLI_HRI", PHLI_HRI_OUT (:,:,:,IBL), PHLI_HRI (:,:,:,IBL))
-    CALL DIFF ("PHLI_HCF", PHLI_HCF_OUT (:,:,:,IBL), PHLI_HCF (:,:,:,IBL))
+    CALL DIFF ("PSRCS",    PSRCS_OUT    (JLON1:JLON2,:,:,1), PSRCS    (JLON1:JLON2,:,:,1))
+    CALL DIFF ("PCLDFR",   PCLDFR_OUT   (JLON1:JLON2,:,:,1), PCLDFR   (JLON1:JLON2,:,:,1))
+    CALL DIFF ("PHLC_HRC", PHLC_HRC_OUT (JLON1:JLON2,:,:,1), PHLC_HRC (JLON1:JLON2,:,:,1))
+    CALL DIFF ("PHLC_HCF", PHLC_HCF_OUT (JLON1:JLON2,:,:,1), PHLC_HCF (JLON1:JLON2,:,:,1))
+    CALL DIFF ("PHLI_HRI", PHLI_HRI_OUT (JLON1:JLON2,:,:,1), PHLI_HRI (JLON1:JLON2,:,:,1))
+    CALL DIFF ("PHLI_HCF", PHLI_HCF_OUT (JLON1:JLON2,:,:,1), PHLI_HCF (JLON1:JLON2,:,:,1))
   ENDDO
 ENDIF
 
@@ -307,6 +311,7 @@ REAL :: PREF (:,:,:)
 REAL :: POUT (:,:,:)
 
 INTEGER :: JLON, JLEV
+
 
 PRINT *, CDNAME
 IF (LLSTAT) THEN

@@ -10,6 +10,6 @@ FC0I = /home/mf/dp/marp/gco/apps/mkpack/support/wrapper/mimpifc-18.0.5.274 -conv
 
 CC = /home/mf/dp/marp/gco/apps/mkpack/support/wrapper/icc-18.0.5.274 -qopenmp -DLINUX
 
-FC = $(FC2I)
+FC = $(FC0I)
 
 
