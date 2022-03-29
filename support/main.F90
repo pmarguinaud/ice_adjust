@@ -72,7 +72,8 @@ INTEGER                  :: HSUBG_MF_PDF
 REAL                     :: PTSTEP    
 LOGICAL                  :: LLCHECK
 INTEGER                  :: IBLOCK1, IBLOCK2
-INTEGER                  :: ISTSZ, JBLK1, JBLK2
+INTEGER*8                :: ISTSZ
+INTEGER                  :: JBLK1, JBLK2
 INTEGER                  :: NTID, ITID
 
 REAL, ALLOCATABLE :: PSTACK(:,:)
@@ -169,6 +170,8 @@ D0%NKTB = 1
 D0%NKTE = KLEV
 
 ISTSZ = NPROMA * NGPBLKS * 20 * KLEV
+PRINT *, " ISTSZ = ", ISTSZ
+
 ALLOCATE (PSTACK (ISTSZ, 1))
 
 TS = OMP_GET_WTIME ()
@@ -231,7 +234,7 @@ JBLK2 =      (NGPBLKS * (ITID+1)) / NTID
 
 #ifdef USE_STACK
     YLSTACK%L = LOC (PSTACK (1, 1))
-    YLSTACK%U = YLSTACK%L + ISTSZ * KIND (PSTACK)
+    YLSTACK%U = YLSTACK%L + ISTSZ * INT (KIND (PSTACK), 8)
 #else
     YLSTACK%L = 0
     YLSTACK%U = 0
