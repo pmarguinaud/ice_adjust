@@ -1373,10 +1373,6 @@ sub save_to_file
   'FileHandle'->new (">$file")->print ($data);
 } 
 
-use lib "/home/gmap/mrpm/marguina/fxtran/master/perl/blib/lib"; 
-use lib "/home/gmap/mrpm/marguina/fxtran/master/perl/blib/arch/auto/fxtran";
-use fxtran;
-
 sub fxtran
 {
   my %args = @_;

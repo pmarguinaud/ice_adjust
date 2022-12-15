@@ -1,7 +1,8 @@
-#!/home/gmap/mrpm/marguina/install/perl-5.32.0/bin/perl -w
+#!/usr/bin/perl -w
 
 use strict;
 use FindBin qw ($Bin);
+use local::lib;
 use lib $Bin;
 use FileHandle;
 use File::Copy;
